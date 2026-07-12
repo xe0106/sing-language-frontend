@@ -9,3 +9,4 @@
 - 마찬가지로 `theme` 패키지의 `Color`, `Type`, `Theme` 파일들도 패키지 관리자 1명이 관리합니다.
 - 공통파일: `navigation` 패키지, `ui/component` 패키지, `ui/theme` 패키지
 - 관리자: `acturus0162`
+- 항상 작업 시작할 때 main 브랜치 pull 하고 시작하기
