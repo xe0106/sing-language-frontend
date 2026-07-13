@@ -7,10 +7,10 @@ enum class NavTab(
     val label: String,
     val route: Route
 ){
-    CLASS(
-        icon = R.drawable.ic_class,
+    LECTURE(
+        icon = R.drawable.ic_lecture,
         label = "수어 강의",
-        route = Route.CLASS
+        route = Route.LECTURE
     ),
     QUIZ(
         icon = R.drawable.ic_quiz,
