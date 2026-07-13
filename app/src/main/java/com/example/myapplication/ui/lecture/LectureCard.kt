@@ -3,11 +3,14 @@ package com.example.myapplication.ui.lecture
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -29,11 +32,30 @@ fun LectureCard(
             .background(KuitTheme.colors.white)
             .padding(horizontal = 16.dp, vertical = 22.dp)
     ){
-        AsyncImage(
-            model = lecture.thumbnailUrl,
-            contentDescription = "${lecture.title} 썸네일",
-            modifier = Modifier.size(76.dp),
-            contentScale = ContentScale.Crop
-        )
+        Row(
+            modifier=modifier.fillMaxSize()
+        ){
+            AsyncImage(
+                model = lecture.thumbnailUrl,
+                contentDescription = "${lecture.title} 썸네일",
+                modifier = Modifier.size(76.dp),
+                contentScale = ContentScale.Crop
+            )
+
+            Spacer(modifier=Modifier.width(13.dp))
+
+            LectureInfo(
+                lecture = lecture
+            )
+
+            Spacer(modifier=Modifier.width(49.dp))
+
+            Image(
+                painter= painterResource(id=R.drawable.lecture_play_button),
+                contentDescription = null,
+                modifier= Modifier.size(24.dp),
+                contentScale = ContentScale.Crop
+            )
+        }
     }
 }
