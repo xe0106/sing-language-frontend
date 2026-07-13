@@ -40,7 +40,7 @@ import com.example.myapplication.ui.component.CommonTextField
 import com.example.myapplication.ui.theme.KuitTheme
 
 @Composable
-fun RegisterScreen1(
+fun RegisterScreen2(
     modifier: Modifier =Modifier
 ){
     var name by remember { mutableStateOf("") }
@@ -124,7 +124,7 @@ fun RegisterScreen1(
 }
 
 @Composable
-fun RegisterScreen2(
+fun RegisterScreen1(
     modifier: Modifier =Modifier
 ){
     var nickname by remember { mutableStateOf("") }

@@ -19,15 +19,15 @@ sealed interface Route{
         override val route="home"
     }
 
-    data object CLASS: Route{
-        override val route="class"
+    data object LECTURE: Route{
+        override val route="lecture"
     }
 
     data object QUIZ: Route{
         override val route="quiz"
     }
 
-    data object QUIZ_DETAUL: Route{
+    data object QUIZ_DETAIL: Route{
         override val route="quiz_detail"
     }
 
