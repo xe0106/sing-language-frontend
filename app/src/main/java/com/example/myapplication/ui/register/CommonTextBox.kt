@@ -1,6 +1,5 @@
-package com.example.myapplication.ui.login
+package com.example.myapplication.ui.register
 
-import android.R.attr.name
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
@@ -8,16 +7,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.ui.component.CommonTextField
 import com.example.myapplication.ui.theme.KuitTheme
 
 @Composable
 fun CommonTextBox(
-    modifier: Modifier =Modifier,
-    des:String,
-    phd:String,
-    value:String
+    des: String,
+    phd: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    visualTransformation: VisualTransformation = VisualTransformation.None
 ){
     Text(
         modifier=modifier
@@ -31,7 +33,9 @@ fun CommonTextBox(
     Spacer(modifier= Modifier.height(4.dp))
 
     CommonTextField(
+        value = value,
+        onValueChange = onValueChange,
         placeHolder = phd,
-        textValue = value
+        visualTransformation = visualTransformation
     )
 }

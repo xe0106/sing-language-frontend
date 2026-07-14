@@ -1,11 +1,5 @@
-package com.example.myapplication.ui.login
+package com.example.myapplication.ui.register
 
-import android.R.attr.name
-import android.R.attr.onClick
-import android.R.attr.password
-import android.R.attr.text
-import android.R.attr.textColor
-import android.R.attr.textStyle
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,96 +26,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.R
 import com.example.myapplication.ui.component.CommonButton
 import com.example.myapplication.ui.component.CommonTextField
 import com.example.myapplication.ui.theme.KuitTheme
-
-@Composable
-fun RegisterScreen2(
-    modifier: Modifier =Modifier
-){
-    var name by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordCheck by remember {mutableStateOf("")}
-
-    Box(
-        modifier=modifier.fillMaxSize()
-    ){
-
-        Image(
-            painter= painterResource(id=R.drawable.register_background),
-            contentDescription = null,
-            modifier= Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
-
-        Column(
-            modifier=modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Bottom,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ){
-            Spacer(modifier= Modifier.height(55.dp))
-
-            Box(
-                modifier=modifier
-                    .fillMaxWidth()
-                    .height(52.dp)
-                    .padding(horizontal = 20.dp, vertical = 15.dp)
-            ){
-                Text(
-                    text="회원가입",
-                    color= KuitTheme.colors.black,
-                    style= KuitTheme.typography.SB_22
-                )
-            }
-
-            Spacer(modifier= Modifier.height(30.dp))
-
-            CommonTextBox(
-                des = "이름",
-                phd = "이름을 입력하세요",
-                value = name
-            )
-
-            Spacer(modifier= Modifier.height(20.dp))
-
-            CommonTextBox(
-                des = "이메일",
-                phd = "이메일을 입력하세요",
-                value = email
-            )
-
-            Spacer(modifier= Modifier.height(20.dp))
-
-            CommonTextBox(
-                des = "비밀번호",
-                phd = "비밀번호 (6자리 이상)",
-                value = password
-            )
-
-            Spacer(modifier= Modifier.height(20.dp))
-
-            CommonTextBox(
-                des = "비밀번호 확인",
-                phd = "비밀번호 재입력",
-                value = passwordCheck
-            )
-
-            Spacer(modifier= Modifier.height(272.65.dp))
-
-            CommonButton(
-                onClick = {println("구현x")},
-                buttonName = "가입하기"
-            )
-
-            Spacer(modifier= Modifier.height(22.43.dp))
-        }
-    }
-}
+import com.example.myapplication.ui.theme.MyApplicationTheme
 
 @Composable
 fun RegisterScreen1(
@@ -237,8 +149,9 @@ fun RegisterScreen1(
                     .height(50.dp)
             ){
                 CommonTextField(
+                    value = nickname,
+                    onValueChange = { nickname = it },
                     placeHolder = "닉네임",
-                    textValue = nickname
                 )
 
                 Button(
@@ -257,7 +170,7 @@ fun RegisterScreen1(
                 ) {
                     Text(
                         text = "중복확인",
-                        style = KuitTheme.typography.M_12,
+                        style = KuitTheme.typography.R_12,
                         color = Color(0XFF999999)
                     )
                 }
@@ -278,23 +191,25 @@ fun RegisterScreen1(
 
             GenderToggleButton(
                 selectedGender = gender,
-                onGenderSelected = {gender=it}
+                onGenderSelected = { gender = it }
             )
 
             Spacer(modifier= Modifier.height(21.93.dp))
 
             CommonTextBox(
-                des="생년월일",
-                phd="사용자 입력",
-                value = birthDate
+                des = "생년월일",
+                phd = "사용자 입력",
+                value = birthDate,
+                onValueChange = { birthDate = it }
             )
 
             Spacer(modifier= Modifier.height(20.11.dp))
 
             CommonTextBox(
-                des="전화번호",
-                phd="사용자 입력",
-                value = phoneNumber
+                des = "전화번호",
+                phd = "사용자 입력",
+                value = phoneNumber,
+                onValueChange = { phoneNumber = it }
             )
 
             Spacer(modifier= Modifier.height(102.04.dp))
@@ -312,5 +227,7 @@ fun RegisterScreen1(
 @Preview(showBackground = true)
 @Composable
 private fun RegisterScreen1Preview(){
-    RegisterScreen2()
+    MyApplicationTheme{
+        RegisterScreen1()
+    }
 }

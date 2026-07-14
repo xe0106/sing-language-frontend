@@ -1,6 +1,5 @@
 package com.example.myapplication.ui.component
 
-import android.R.attr.password
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,20 +9,22 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.ui.theme.KuitTheme
 
 @Composable
 fun CommonTextField(
-    placeHolder:String,
-    modifier:Modifier= Modifier,
-    textValue:String
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeHolder: String,
+    modifier: Modifier = Modifier,
+    singleLine: Boolean = true,
+    visualTransformation: VisualTransformation = VisualTransformation.None
 ){
-    var value=textValue
-
     TextField(
         value=value,
-        onValueChange = {value=it},
+        onValueChange = onValueChange,
         placeholder = {
             Text(
                 text=placeHolder,
@@ -31,7 +32,8 @@ fun CommonTextField(
                 style = KuitTheme.typography.M_14
             )
         },
-        singleLine = true,
+        singleLine = singleLine,
+        visualTransformation = visualTransformation,
         shape= RoundedCornerShape(12.dp),
         colors = TextFieldDefaults.colors(
             focusedContainerColor = KuitTheme.colors.white,
