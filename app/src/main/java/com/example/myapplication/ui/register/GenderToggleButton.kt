@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.login
+package com.example.myapplication.ui.register
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background

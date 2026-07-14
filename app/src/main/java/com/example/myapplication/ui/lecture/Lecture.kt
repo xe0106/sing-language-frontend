@@ -5,6 +5,7 @@ data class Lecture(
     val title:String,
     val description: String,
     val time:Int,
+    val genre:String,
     val videoUrl:String,
     val thumbnailUrl:String
 )
