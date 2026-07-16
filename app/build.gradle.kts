@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.hilt.android)    //hilt 사용하기 위한 의존성 추가
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -52,4 +54,7 @@ dependencies {
 
     implementation("io.coil-kt.coil3:coil-compose:3.5.0")       //AsyncImage 의존성
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.5.0")
+    implementation(libs.hilt.android)       //hilt 사용하기 위한 의존성 추가
+    implementation(libs.hilt.navigation.compose)
+    ksp(libs.hilt.compiler)
 }

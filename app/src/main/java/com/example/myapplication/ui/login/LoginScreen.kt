@@ -1,5 +1,6 @@
 package com.example.myapplication.ui.login
 
+import android.R.attr.password
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,21 +30,44 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.myapplication.R
 import com.example.myapplication.ui.component.CommonButton
 import com.example.myapplication.ui.component.CommonTextField
 import com.example.myapplication.ui.theme.KuitColors
 import com.example.myapplication.ui.theme.KuitTheme
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 @Composable
 fun LoginScreen(
     modifier:Modifier= Modifier,
+    viewModel: LoginViewModel= hiltViewModel()
 ){
 
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    val uiState=viewModel.uiState
 
+    LoginScreenContent(
+        modifier=modifier,
+        uiState=uiState,
+        onEmailChange = viewModel::onEmailChange,
+        onPasswordChange = viewModel::onPasswordChange,
+        onLoginClick = viewModel::login,
+        onRegisterClick = {
+            println("미구현")
+        }
+    )
+}
+
+@Composable
+private fun LoginScreenContent(
+    modifier:Modifier=Modifier,
+    uiState: LoginUiState,
+    onEmailChange:(String)->Unit,
+    onPasswordChange:(String)->Unit,
+    onLoginClick:()->Unit,
+    onRegisterClick:()->Unit
+){
     Box(
         modifier=modifier.fillMaxSize()
     ){
@@ -60,16 +84,16 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ){
             CommonTextField(
-                value = email,
-                onValueChange = { email = it },
+                value = uiState.email,
+                onValueChange = onEmailChange,
                 placeHolder = "이메일",
             )
 
             Spacer(modifier= Modifier.height(12.dp))
 
             CommonTextField(
-                value = password,
-                onValueChange = { password = it },
+                value = uiState.password,
+                onValueChange = onPasswordChange,
                 placeHolder = "비밀번호",
                 visualTransformation = PasswordVisualTransformation()
             )
@@ -81,7 +105,7 @@ fun LoginScreen(
                     .width(77.dp)
                     .height(17.dp)
                     .clickable{
-                        println("구현x")
+                        onRegisterClick()
                     },
                 text="회원가입 하기",
                 color= KuitTheme.colors.white,
@@ -92,20 +116,26 @@ fun LoginScreen(
             Spacer(modifier= Modifier.height(39.dp))
 
             CommonButton(
-                onClick = {println("구현x")},
+                onClick = onLoginClick,
                 buttonName = "로그인"
             )
 
             Spacer(modifier= Modifier.height(22.43.dp))
         }
     }
-
-
 }
 
 
 @Preview(showBackground = true)
 @Composable
-private fun LoginScreenPreview(){
-    LoginScreen()
+private fun LoginScreenPreview() {
+    MyApplicationTheme {
+        LoginScreenContent(
+            uiState = LoginUiState(),
+            onEmailChange = {},
+            onPasswordChange = {},
+            onLoginClick = {},
+            onRegisterClick = {}
+        )
+    }
 }
