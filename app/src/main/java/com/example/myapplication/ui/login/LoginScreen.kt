@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,6 +32,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.myapplication.R
 import com.example.myapplication.ui.component.CommonButton
 import com.example.myapplication.ui.component.CommonTextField
@@ -42,10 +45,18 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 @Composable
 fun LoginScreen(
     modifier:Modifier= Modifier,
-    viewModel: LoginViewModel= hiltViewModel()
+    viewModel: LoginViewModel= hiltViewModel(),
+    onLoginSuccess:()->Unit,
+    onRegisterClick:()->Unit
 ){
 
     val uiState=viewModel.uiState
+
+    LaunchedEffect(uiState.isLoginSuccess) {
+        if(uiState.isLoginSuccess){
+            onLoginSuccess()
+        }
+    }
 
     LoginScreenContent(
         modifier=modifier,
@@ -53,9 +64,7 @@ fun LoginScreen(
         onEmailChange = viewModel::onEmailChange,
         onPasswordChange = viewModel::onPasswordChange,
         onLoginClick = viewModel::login,
-        onRegisterClick = {
-            println("미구현")
-        }
+        onRegisterClick = onRegisterClick
     )
 }
 
