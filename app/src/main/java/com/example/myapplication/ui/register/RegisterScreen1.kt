@@ -1,6 +1,9 @@
 package com.example.myapplication.ui.register
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,20 +18,22 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import coil3.compose.AsyncImage
 import com.example.myapplication.R
 import com.example.myapplication.ui.component.CommonButton
 import com.example.myapplication.ui.component.CommonTextField
@@ -37,13 +42,62 @@ import com.example.myapplication.ui.theme.MyApplicationTheme
 
 @Composable
 fun RegisterScreen1(
-    modifier: Modifier =Modifier
+    modifier: Modifier =Modifier,
+    viewModel: RegisterViewModel = hiltViewModel(),
+    onNextClick: () -> Unit,
+    onBackClick: () -> Unit
 ){
-    var nickname by remember { mutableStateOf("") }
-    var gender by remember { mutableStateOf(Gender.MALE) }
-    var birthDate by remember { mutableStateOf("") }
-    var phoneNumber by remember { mutableStateOf("") }
+    val uiState=viewModel.uiState
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        viewModel.onProfileImageChange(uri?.toString())
+    }
+
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearErrorMessage()
+        }
+    }
+
+    Scaffold(
+        snackbarHost={
+            SnackbarHost(hostState = snackbarHostState)
+        },
+        containerColor = Color.Transparent
+    ) {padding->
+        RegisterScreen1Content(
+            modifier = modifier.padding(padding),
+            uiState = uiState,
+            onProfileImageClick = {
+                imagePickerLauncher.launch("image/*")
+            },
+            onNicknameChange = viewModel::onNicknameChange,
+            onNicknameCheckClick = viewModel::nicknameCheck,
+            onGenderChange = viewModel::onGenderChange,
+            onBirthChange = viewModel::onBirthChange,
+            onPhoneNumberChange = viewModel::onPhoneNumberChange,
+            onNextClick = onNextClick
+        )
+    }
+}
+
+@Composable
+private fun RegisterScreen1Content(
+    modifier: Modifier = Modifier,
+    uiState: RegisterUiState,
+    onProfileImageClick: () -> Unit,
+    onNicknameChange: (String) -> Unit,
+    onNicknameCheckClick: () -> Unit,
+    onGenderChange: (Gender) -> Unit,
+    onBirthChange: (String) -> Unit,
+    onPhoneNumberChange: (String) -> Unit,
+    onNextClick: () -> Unit
+){
     Box(
         modifier=modifier.fillMaxSize()
     ){
@@ -112,10 +166,10 @@ fun RegisterScreen1(
                     .width(80.dp)
                     .height(80.dp)
             ){
-                Image(
-                    painter= painterResource(id=R.drawable.basic_profile),
+                AsyncImage(
+                    model = uiState.profileImageUri ?: R.drawable.basic_profile,
                     contentDescription = null,
-                    modifier= Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
 
@@ -125,7 +179,10 @@ fun RegisterScreen1(
                     modifier= Modifier
                         .align(Alignment.TopEnd)
                         .width(20.dp)
-                        .height(20.dp),
+                        .height(20.dp)
+                        .clickable{
+                            onProfileImageClick()
+                        },
                     contentScale = ContentScale.Crop
                 )
             }
@@ -149,13 +206,13 @@ fun RegisterScreen1(
                     .height(50.dp)
             ){
                 CommonTextField(
-                    value = nickname,
-                    onValueChange = { nickname = it },
+                    value = uiState.nickname,
+                    onValueChange = onNicknameChange,
                     placeHolder = "닉네임",
                 )
 
                 Button(
-                    onClick = {println("not found")},
+                    onClick = onNicknameCheckClick,
                     modifier = modifier
                         .align(Alignment.CenterEnd)
                         .offset(x=(-18).dp)
@@ -190,8 +247,8 @@ fun RegisterScreen1(
             Spacer(modifier= Modifier.height(4.dp))
 
             GenderToggleButton(
-                selectedGender = gender,
-                onGenderSelected = { gender = it }
+                selectedGender = uiState.gender,
+                onGenderSelected = onGenderChange
             )
 
             Spacer(modifier= Modifier.height(21.93.dp))
@@ -199,8 +256,8 @@ fun RegisterScreen1(
             CommonTextBox(
                 des = "생년월일",
                 phd = "사용자 입력",
-                value = birthDate,
-                onValueChange = { birthDate = it }
+                value = uiState.birth,
+                onValueChange = onBirthChange
             )
 
             Spacer(modifier= Modifier.height(20.11.dp))
@@ -208,14 +265,14 @@ fun RegisterScreen1(
             CommonTextBox(
                 des = "전화번호",
                 phd = "사용자 입력",
-                value = phoneNumber,
-                onValueChange = { phoneNumber = it }
+                value = uiState.phoneNumber,
+                onValueChange = onPhoneNumberChange
             )
 
             Spacer(modifier= Modifier.height(102.04.dp))
 
             CommonButton(
-                onClick = {println("구현x")},
+                onClick = onNextClick,
                 buttonName = "시작하기"
             )
 
@@ -228,6 +285,15 @@ fun RegisterScreen1(
 @Composable
 private fun RegisterScreen1Preview(){
     MyApplicationTheme{
-        RegisterScreen1()
+        RegisterScreen1Content(
+            uiState = RegisterUiState(),
+            onProfileImageClick = {},
+            onNicknameChange = {},
+            onNicknameCheckClick = {},
+            onGenderChange = {},
+            onBirthChange = {},
+            onPhoneNumberChange = {},
+            onNextClick = {}
+        )
     }
 }
