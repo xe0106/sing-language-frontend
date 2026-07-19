@@ -7,6 +7,10 @@ sealed interface Route{
         override val route="login"
     }
 
+    data object REGISTER_GRAPH: Route{
+        override val route="register_graph"
+    }
+
     data object REGISTER1: Route{
         override val route="register1"
     }

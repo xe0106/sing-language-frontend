@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -46,11 +47,12 @@ fun GenreBox(
                     .clip(RoundedCornerShape(32.dp))
                     .background(
                         if(isSelected) KuitTheme.colors.black
-                        else KuitTheme.colors.main2
+                        else Color(0xFFF2D3CE)
                     )
                     .clickable{
                         onGenreClick(genre)
-                    }
+                    },
+                contentAlignment = Alignment.Center
             ){
                 Text(
                     text=genre.name,
