@@ -1,7 +1,5 @@
 package com.example.myapplication.navigation
 
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -9,20 +7,22 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.navigation
 import androidx.navigation.navigation
 import com.example.myapplication.ui.home.HomeScreen
 import com.example.myapplication.ui.lecture.LectureScreen
 import com.example.myapplication.ui.login.LoginScreen
+import com.example.myapplication.ui.mypage.MyPageScreen
+import com.example.myapplication.ui.mypage.ProfileEditScreen
 import com.example.myapplication.ui.quiz.QuizScreen
 import com.example.myapplication.ui.register.RegisterScreen1
 import com.example.myapplication.ui.register.RegisterScreen2
 import com.example.myapplication.ui.register.RegisterViewModel
+import com.example.myapplication.ui.settings.SettingsScreen
 
 @Composable
 fun MainNavHost(
     navController: NavHostController,
-    modifier:Modifier=Modifier
+    modifier: Modifier = Modifier
 ) {
     NavHost(
         navController = navController,
@@ -94,7 +94,11 @@ fun MainNavHost(
         }
 
         composable(Route.QUIZ.route) {
-            QuizScreen()
+            QuizScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
         }
 
         composable(Route.LECTURE.route) {
@@ -106,7 +110,36 @@ fun MainNavHost(
         }
 
         composable(Route.PROFILE.route) {
-            // ProfileScreen()
+            MyPageScreen(
+                onSettingsClick = {
+                    navController.navigate(Route.SETTINGS.route)
+                },
+                onLogoutClick = {
+                    // TODO: 로그아웃 처리 후 로그인 화면으로
+                },
+                onWithdrawClick = {
+                    // TODO: 회원 탈퇴 처리
+                }
+            )
+        }
+
+        composable(Route.SETTINGS.route) {
+            SettingsScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onProfileEditClick = {
+                    navController.navigate(Route.PROFILE_EDIT.route)
+                }
+            )
+        }
+
+        composable(Route.PROFILE_EDIT.route) {
+            ProfileEditScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }
