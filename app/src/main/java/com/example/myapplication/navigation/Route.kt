@@ -42,4 +42,12 @@ sealed interface Route{
     data object PROFILE: Route{
         override val route="profile"
     }
+
+    data object SETTINGS: Route{
+        override val route="settings"
+    }
+
+    data object PROFILE_EDIT: Route{
+        override val route="profile_edit"
+    }
 }

@@ -1,4 +1,3 @@
-
 package com.example.myapplication.ui.home
 
 import androidx.compose.foundation.Image
@@ -12,6 +11,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,12 +20,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myapplication.R
 import com.example.myapplication.ui.component.TopBar
 import com.example.myapplication.ui.theme.KuitTheme
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    viewModel: HomeViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -56,7 +62,7 @@ fun HomeScreen() {
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "좋은 아침이에요,\n유희진님!",
+                        text = "좋은 아침이에요,\n${uiState.userName}님!",
                         color = KuitTheme.colors.black,
                         fontSize = 20.sp
                     )
@@ -69,20 +75,20 @@ fun HomeScreen() {
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "수어 단어 5개 익히기",
+                text = uiState.todayMission,
                 color = KuitTheme.colors.black,
                 fontSize = 14.sp
             )
             Spacer(modifier = Modifier.height(8.dp))
             LinearProgressIndicator(
-                progress = { 0.4f },
+                progress = { uiState.progress },
                 modifier = Modifier.fillMaxWidth(),
                 color = KuitTheme.colors.main1,
                 trackColor = KuitTheme.colors.gray2
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "40%",
+                text = "${(uiState.progress * 100).toInt()}%",
                 color = KuitTheme.colors.gray1,
                 fontSize = 12.sp
             )
@@ -177,5 +183,3 @@ fun HomeScreen() {
         }
     }
 }
-
-
