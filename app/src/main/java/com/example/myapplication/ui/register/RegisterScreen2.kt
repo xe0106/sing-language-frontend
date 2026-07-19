@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -58,10 +59,11 @@ fun RegisterScreen2(
         snackbarHost={
             SnackbarHost(hostState = snackbarHostState)
         },
-        containerColor = Color.Transparent
-    ) {padding->
+        containerColor = Color.Transparent,
+        contentWindowInsets = WindowInsets(0)
+    ) {
         RegisterScreen2Content(
-            modifier = modifier.padding(padding),
+            modifier = modifier.fillMaxSize(),
             uiState = uiState,
             onNameChange = viewModel::onNameChange,
             onEmailChange = viewModel::onEmailChange,
@@ -94,14 +96,14 @@ private fun RegisterScreen2Content(
         )
 
         Column(
-            modifier=modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Bottom,
+            modifier=Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ){
             Spacer(modifier= Modifier.height(55.dp))
 
             Box(
-                modifier=modifier
+                modifier=Modifier
                     .fillMaxWidth()
                     .height(52.dp)
                     .padding(horizontal = 20.dp, vertical = 15.dp)

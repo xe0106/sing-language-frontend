@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -68,10 +69,11 @@ fun RegisterScreen1(
         snackbarHost={
             SnackbarHost(hostState = snackbarHostState)
         },
-        containerColor = Color.Transparent
-    ) {padding->
+        containerColor = Color.Transparent,
+        contentWindowInsets = WindowInsets(0)
+    ) {
         RegisterScreen1Content(
-            modifier = modifier.padding(padding),
+            modifier = modifier.fillMaxSize(),
             uiState = uiState,
             onProfileImageClick = {
                 imagePickerLauncher.launch("image/*")
@@ -110,14 +112,14 @@ private fun RegisterScreen1Content(
         )
 
         Column(
-            modifier=modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Bottom,
+            modifier=Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ){
             Spacer(modifier= Modifier.height(55.dp))
 
             Box(
-                modifier=modifier
+                modifier=Modifier
                     .fillMaxWidth()
                     .height(52.dp)
                     .padding(horizontal = 20.dp, vertical = 15.dp)
@@ -132,7 +134,7 @@ private fun RegisterScreen1Content(
             Spacer(modifier= Modifier.height(19.dp))
 
             Box(
-                modifier=modifier
+                modifier=Modifier
                     .fillMaxWidth()
                     .height(24.dp)
                     .padding(horizontal = 20.dp)
@@ -147,7 +149,7 @@ private fun RegisterScreen1Content(
             Spacer(modifier= Modifier.height(6.dp))
 
             Box(
-                modifier=modifier
+                modifier=Modifier
                     .fillMaxWidth()
                     .height(24.dp)
                     .padding(horizontal = 20.dp)
@@ -162,7 +164,7 @@ private fun RegisterScreen1Content(
             Spacer(modifier= Modifier.height(37.dp))
 
             Box(
-                modifier=modifier
+                modifier=Modifier
                     .width(80.dp)
                     .height(80.dp)
             ){
@@ -190,7 +192,7 @@ private fun RegisterScreen1Content(
             Spacer(modifier= Modifier.height(19.dp))
 
             Text(
-                modifier=modifier
+                modifier=Modifier
                     .width(345.dp)
                     .height(20.dp),
                 text="닉네임",
@@ -201,7 +203,7 @@ private fun RegisterScreen1Content(
             Spacer(modifier= Modifier.height(4.dp))
 
             Box(
-                modifier=modifier
+                modifier=Modifier
                     .width(345.dp)
                     .height(50.dp)
             ){
@@ -213,7 +215,7 @@ private fun RegisterScreen1Content(
 
                 Button(
                     onClick = onNicknameCheckClick,
-                    modifier = modifier
+                    modifier = Modifier
                         .align(Alignment.CenterEnd)
                         .offset(x=(-18).dp)
                         .width(56.dp)
@@ -236,7 +238,7 @@ private fun RegisterScreen1Content(
             Spacer(modifier= Modifier.height(20.dp))
 
             Text(
-                modifier=modifier
+                modifier=Modifier
                     .width(345.dp)
                     .height(20.dp),
                 text="성별",
