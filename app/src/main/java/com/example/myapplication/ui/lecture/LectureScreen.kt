@@ -4,49 +4,40 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.myapplication.R
 import com.example.myapplication.ui.component.TopBar
+import com.example.myapplication.ui.lecture.component.GenreBox
+import com.example.myapplication.ui.lecture.component.LectureCard
+import com.example.myapplication.ui.theme.KuitTheme
 
 @Composable
 fun LectureScreen(
-    modifier: Modifier =Modifier
+    modifier: Modifier =Modifier,
+    viewModel: LectureViewModel= hiltViewModel(),
+    onLectureClick: (Long) -> Unit
 ){
-    val genres=listOf(
-        Genre("인간"),
-        Genre("삶"),
-        Genre("식생활"),
-        Genre("의생활"),
-        Genre("주생활"),
-        Genre("사회생활"),
-        Genre("경제생활"),
-        Genre("교육"),
-        Genre("나라명 및 지명"),
-        Genre("종교"),
-        Genre("문화"),
-        Genre("정치와 행정"),
-        Genre("자연"),
-        Genre("동식물"),
-        Genre("개념"),
-        Genre("기타"),
-    )
-
-    var selectedGenre by remember{ mutableStateOf<Genre>(genres.first()) }
+    val uiState=viewModel.uiState
 
     Box(
-        modifier=Modifier.fillMaxSize()
+        modifier=modifier.fillMaxSize()
     ){
         Image(
             painter= painterResource(id=R.drawable.lecture_background),
@@ -66,13 +57,86 @@ fun LectureScreen(
 
             Spacer(modifier=Modifier.height(8.dp))
 
-            GenreBox(
-                genres=genres,
-                selectedGenre = selectedGenre,
-                onGenreClick = {clickedGenre->
-                    selectedGenre=clickedGenre
+            uiState.selectedGenre?.let{selectedGenre->
+                GenreBox(
+                    genres = uiState.genres,
+                    selectedGenre = selectedGenre,
+                    onGenreClick = viewModel::onGenreClick
+                )
+            }
+
+            Spacer(modifier=Modifier.height(38.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                when {
+                    uiState.isLoading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+
+                    uiState.errorMessage != null -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = uiState.errorMessage,
+                                    color = KuitTheme.colors.black
+                                )
+
+                                TextButton(
+                                    onClick = viewModel::loadLectures
+                                ) {
+                                    Text(text = "다시 시도")
+                                }
+                            }
+                        }
+                    }
+
+                    uiState.filteredLectures.isEmpty() -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "강의가 없습니다.",
+                                color = KuitTheme.colors.black
+                            )
+                        }
+                    }
+
+                    else -> {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            contentPadding = PaddingValues(bottom = 120.dp)
+                        ) {
+                            items(uiState.filteredLectures) { lecture ->
+                                LectureCard(
+                                    lecture = lecture,
+                                    onClick = {
+                                        onLectureClick(lecture.id)
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
-            )
+            }
         }
     }
 }

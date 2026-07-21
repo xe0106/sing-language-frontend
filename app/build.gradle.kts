@@ -57,4 +57,6 @@ dependencies {
     implementation(libs.hilt.android)       //hilt 사용하기 위한 의존성 추가
     implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
+    implementation("androidx.media3:media3-exoplayer:1.10.1")      //수어 강의 의존성
+    implementation("androidx.media3:media3-ui:1.10.1")
 }

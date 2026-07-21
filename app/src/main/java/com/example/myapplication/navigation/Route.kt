@@ -27,6 +27,14 @@ sealed interface Route{
         override val route="lecture"
     }
 
+    data object LECTURE_DETAIL: Route{
+        override val route="lecture_detail/{lectureId}"
+
+        fun createRoute(lectureId:Long): String{
+            return "lecture_detail/${lectureId}"
+        }
+    }
+
     data object QUIZ: Route{
         override val route="quiz"
     }
