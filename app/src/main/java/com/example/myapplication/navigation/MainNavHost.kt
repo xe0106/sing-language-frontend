@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import com.example.myapplication.ui.home.HomeScreen
+import com.example.myapplication.ui.lecture.LectureDetailScreen
 import com.example.myapplication.ui.lecture.LectureScreen
 import com.example.myapplication.ui.login.LoginScreen
 import com.example.myapplication.ui.mypage.MyPageScreen
@@ -102,7 +103,26 @@ fun MainNavHost(
         }
 
         composable(Route.LECTURE.route) {
-            LectureScreen()
+            LectureScreen(
+                onLectureClick = { lectureId ->
+                    navController.navigate(Route.LECTURE_DETAIL.createRoute(lectureId))
+                }
+            )
+        }
+
+        composable(Route.LECTURE_DETAIL.route){backStackEntry->
+            val lectureId=backStackEntry.arguments
+                ?.getString("lectureId")
+                ?.toLongOrNull()
+
+            if(lectureId!=null) {
+                LectureDetailScreen(
+                    lectureId=lectureId,
+                    onBackClick = {
+                        navController.popBackStack()
+                    }
+                )
+            }
         }
 
         composable(Route.CALL.route) {

@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.lecture
+package com.example.myapplication.ui.lecture.component
 
 data class Lecture(
     val id:Long,

@@ -1,6 +1,5 @@
-package com.example.myapplication.ui.lecture
+package com.example.myapplication.ui.lecture.component
 
-import android.R.attr.text
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,7 +22,7 @@ fun LectureInfo(
             .height(67.dp)
     ){
         Text(
-            modifier=modifier
+            modifier=Modifier
                 .fillMaxWidth()
                 .height(23.dp),
             color = Color(0XFF212121),
@@ -32,16 +31,16 @@ fun LectureInfo(
         )
 
         Text(
-            modifier=modifier
+            modifier=Modifier
                 .fillMaxWidth()
-                .height(22.dp),
+                .height(31.dp),
             color = Color(0XFF96979B),
             style = KuitTheme.typography.M_12,
             text=lecture.description
         )
 
         Text(
-            modifier=modifier
+            modifier=Modifier
                 .fillMaxWidth()
                 .height(22.dp),
             color = Color(0XFF96979B),
