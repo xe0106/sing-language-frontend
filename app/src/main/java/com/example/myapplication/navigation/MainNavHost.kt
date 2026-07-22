@@ -8,6 +8,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import com.example.myapplication.ui.call.CallScreen
 import com.example.myapplication.ui.home.HomeScreen
 import com.example.myapplication.ui.lecture.LectureDetailScreen
 import com.example.myapplication.ui.lecture.LectureScreen
@@ -126,7 +127,14 @@ fun MainNavHost(
         }
 
         composable(Route.CALL.route) {
-            // CallScreen()
+            CallScreen(
+                onSettingsClick = {
+                    navController.navigate(Route.SETTINGS.route)
+                },
+                onContactClick = {
+                    //TODO
+                }
+            )
         }
 
         composable(Route.PROFILE.route) {
