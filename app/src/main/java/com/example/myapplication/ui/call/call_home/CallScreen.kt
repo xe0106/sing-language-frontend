@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.call
+package com.example.myapplication.ui.call.call_home
 
 import android.content.Intent
 import android.provider.ContactsContract
@@ -40,7 +40,7 @@ import com.example.myapplication.ui.theme.KuitTheme
 @Composable
 fun CallScreen(
     modifier: Modifier= Modifier,
-    viewModel: CallViewModel= hiltViewModel(),
+    viewModel: CallViewModel = hiltViewModel(),
     onSettingsClick:()->Unit,
     onContactClick:(Contact)->Unit
 ){
@@ -94,7 +94,9 @@ fun CallScreen(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
+
                 Spacer(modifier = Modifier.width(8.dp))
+
                 Box(
                     modifier = Modifier
                         .size(35.dp)
@@ -116,7 +118,7 @@ fun CallScreen(
 
             ContactBox(
                 modifier = Modifier.padding(horizontal = 16.dp),
-                contacts=uiState.contacts,
+                contacts = uiState.contacts,
                 onContactClick = onContactClick
             )
         }
@@ -130,7 +132,7 @@ fun CallScreen(
             },
             modifier= Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end=24.dp, bottom = 110.dp),
+                .padding(end=24.dp, bottom = 140.dp),
             containerColor = KuitTheme.colors.main1,
             contentColor = KuitTheme.colors.white
         ) {

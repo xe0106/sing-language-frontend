@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.call
+package com.example.myapplication.ui.call.call_home
 
 import android.content.Context
 import android.net.Uri
@@ -9,7 +9,7 @@ import javax.inject.Inject
 class DeviceContactReader @Inject constructor(
     @param:ApplicationContext private val context: Context
 ){
-    fun readContact(uri: Uri): Contact{
+    fun readContact(uri: Uri): Contact {
         val projection = arrayOf(
             ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
             ContactsContract.CommonDataKinds.Phone.NUMBER,

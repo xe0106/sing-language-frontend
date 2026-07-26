@@ -37,6 +37,13 @@ class KuitTypography(
         lineHeight = 27.sp,
         letterSpacing = 0.sp
     ),
+    val B_24: TextStyle = TextStyle(
+        fontFamily = Pretendard,
+        fontWeight = FontWeight.Bold,
+        fontSize = 24.sp,
+        lineHeight = 36.sp,
+        letterSpacing = 0.sp
+    ),
     val B_20: TextStyle = TextStyle(
         fontFamily = Pretendard,
         fontWeight = FontWeight.Bold,

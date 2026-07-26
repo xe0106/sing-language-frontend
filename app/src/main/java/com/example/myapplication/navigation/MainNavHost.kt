@@ -8,7 +8,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
-import com.example.myapplication.ui.call.CallScreen
+import com.example.myapplication.ui.call.call_receive.CallReceiveScreen
+import com.example.myapplication.ui.call.call_home.CallScreen
+import com.example.myapplication.ui.call.video_call.VideoCallScreen
 import com.example.myapplication.ui.home.HomeScreen
 import com.example.myapplication.ui.lecture.LectureDetailScreen
 import com.example.myapplication.ui.lecture.LectureScreen
@@ -131,10 +133,60 @@ fun MainNavHost(
                 onSettingsClick = {
                     navController.navigate(Route.SETTINGS.route)
                 },
-                onContactClick = {
-                    //TODO
+                onContactClick = {contact->
+                    navController.navigate(
+                        Route.VIDEO_CALL.createRoute(contact.id)
+                    )
                 }
             )
+        }
+
+        composable(Route.CALL_RECEIVE.route) { backStackEntry ->
+            val callId = backStackEntry.arguments
+                ?.getString("callId")
+                ?.toLongOrNull()
+
+            if (callId != null) {
+                CallReceiveScreen(
+                    callId = callId,
+                    onAcceptSuccess = {
+                        navController.navigate(
+                            Route.VIDEO_CALL.createRoute(callId)
+                        ) {
+                            popUpTo(Route.CALL_RECEIVE.route) {
+                                inclusive = true
+                            }
+                        }
+                    },
+                    onRejectSuccess = {
+                        navController.navigate(Route.HOME.route) {
+                            popUpTo(Route.CALL_RECEIVE.route) {
+                                inclusive = true
+                            }
+                        }
+                    }
+                )
+            }
+        }
+
+        composable(Route.VIDEO_CALL.route) { backStackEntry ->
+            val callId = backStackEntry.arguments
+                ?.getString("callId")
+                ?.toLongOrNull()
+
+            if (callId != null) {
+                VideoCallScreen(
+                    callId=callId,
+                    onCallEnded = {
+                        navController.navigate(Route.CALL.route) {
+                            popUpTo(Route.VIDEO_CALL.route) {
+                                inclusive=true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
         }
 
         composable(Route.PROFILE.route) {

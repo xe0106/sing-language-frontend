@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.call
+package com.example.myapplication.ui.call.call_home
 
 data class CallUiState(
     val contacts: List<Contact> = emptyList(),
