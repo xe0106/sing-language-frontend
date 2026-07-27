@@ -59,4 +59,7 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation("androidx.media3:media3-exoplayer:1.10.1")      //수어 강의 의존성
     implementation("androidx.media3:media3-ui:1.10.1")
+    implementation(libs.retrofit)                       // retrofit 서버 통신
+    implementation(libs.retrofit.converter.gson)        // JSON <-> 객체 변환
+    implementation(libs.okhttp.logging.interceptor)     // 통신 로그 확인용
 }

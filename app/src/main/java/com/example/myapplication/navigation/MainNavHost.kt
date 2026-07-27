@@ -92,7 +92,11 @@ fun MainNavHost(
         }
 
         composable(Route.HOME.route) {
-            HomeScreen()
+            HomeScreen(
+                onLectureClick = { navController.navigate(Route.LECTURE.route) },
+                onQuizClick = { navController.navigate(Route.QUIZ.route) },
+                onCallClick = { navController.navigate(Route.CALL.route) }
+            )
         }
 
         composable(Route.QUIZ.route) {
