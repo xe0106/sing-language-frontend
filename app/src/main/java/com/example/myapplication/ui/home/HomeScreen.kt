@@ -2,6 +2,7 @@ package com.example.myapplication.ui.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,7 +28,10 @@ import com.example.myapplication.ui.theme.KuitTheme
 
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel = hiltViewModel()
+    viewModel: HomeViewModel = hiltViewModel(),
+    onLectureClick: () -> Unit = {},
+    onQuizClick: () -> Unit = {},
+    onCallClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -100,14 +104,15 @@ fun HomeScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             listOf(
-                Triple(R.drawable.ic_class_image, "수어 강의", {}),
-                Triple(R.drawable.ic_quiz_image, "수어 퀴즈", {}),
-                Triple(R.drawable.ic_call_image, "영상 통화", {})
+                Triple(R.drawable.ic_class_image, "수어 강의", onLectureClick),
+                Triple(R.drawable.ic_quiz_image, "수어 퀴즈", onQuizClick),
+                Triple(R.drawable.ic_call_image, "영상 통화", onCallClick)
             ).forEach { (icon, label, onClick) ->
                 Column(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(8.dp))
+                        .clickable { onClick() }
                         .background(KuitTheme.colors.white)
                         .padding(8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
