@@ -18,8 +18,20 @@ class SessionManager @Inject constructor() {
         private set
 
     @Volatile
+    var refreshToken: String? = null
+        private set
+
+    @Volatile
     var userId: Long? = null
         private set
+
+    fun updateTokens(
+        accessToken: String,
+        refreshToken: String
+    ){
+        this.accessToken=accessToken
+        this.refreshToken=refreshToken
+    }
 
     fun update(accessToken: String?, userId: Long?) {
         this.accessToken = accessToken
@@ -28,6 +40,7 @@ class SessionManager @Inject constructor() {
 
     fun clear() {
         accessToken = null
+        refreshToken = null
         userId = null
     }
 }

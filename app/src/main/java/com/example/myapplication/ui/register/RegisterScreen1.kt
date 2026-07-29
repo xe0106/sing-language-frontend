@@ -169,7 +169,7 @@ private fun RegisterScreen1Content(
                     .height(80.dp)
             ){
                 AsyncImage(
-                    model = uiState.profileImageUri ?: R.drawable.basic_profile,
+                    model = uiState.profileImageUri ?: R.drawable.basic_profile2,
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
