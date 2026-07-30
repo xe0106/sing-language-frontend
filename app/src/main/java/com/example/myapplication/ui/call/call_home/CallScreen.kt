@@ -1,5 +1,9 @@
-package com.example.myapplication.ui.call
+package com.example.myapplication.ui.call.call_home
 
+import android.content.Intent
+import android.provider.ContactsContract
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,32 +33,27 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.myapplication.R
 import com.example.myapplication.ui.theme.KuitTheme
 
 @Composable
 fun CallScreen(
     modifier: Modifier= Modifier,
+    viewModel: CallViewModel = hiltViewModel(),
     onSettingsClick:()->Unit,
     onContactClick:(Contact)->Unit
 ){
-    val contacts=listOf<Contact>(
-        Contact(
-            id=1L,
-            name = "김",
-            phoneNumber = "1"
-        ),
-        Contact(
-            id=2L,
-            name = "이",
-            phoneNumber = "2"
-        ),
-        Contact(
-            id=3L,
-            name = "박",
-            phoneNumber = "3"
-        )
-    )
+    val uiState=viewModel.uiState
+
+    val pickContactLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result->
+        val contactUri = result.data?.data
+        if(contactUri !=null){
+            viewModel.addContactFromDevice(contactUri)
+        }
+    }
 
     Box(
         modifier=modifier.fillMaxSize()
@@ -94,7 +94,9 @@ fun CallScreen(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
+
                 Spacer(modifier = Modifier.width(8.dp))
+
                 Box(
                     modifier = Modifier
                         .size(35.dp)
@@ -116,8 +118,28 @@ fun CallScreen(
 
             ContactBox(
                 modifier = Modifier.padding(horizontal = 16.dp),
-                contacts=contacts,
+                contacts = uiState.contacts,
                 onContactClick = onContactClick
+            )
+        }
+
+        FloatingActionButton(
+            onClick = {
+                val intent = Intent(Intent.ACTION_PICK).apply{
+                    type = ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE
+                }
+                pickContactLauncher.launch(intent)
+            },
+            modifier= Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end=24.dp, bottom = 140.dp),
+            containerColor = KuitTheme.colors.main1,
+            contentColor = KuitTheme.colors.white
+        ) {
+            Text(
+                text = "+",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold
             )
         }
     }

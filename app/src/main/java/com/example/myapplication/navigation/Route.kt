@@ -44,7 +44,23 @@ sealed interface Route{
     }
 
     data object CALL: Route{
-        override val route="call"
+        override val route = "call"
+    }
+
+    data object CALL_RECEIVE: Route{
+        override val route = "call_receive/{callId}"
+
+        fun createRoute(callId: Long): String{
+            return "call_receive/${callId}"
+        }
+    }
+
+    data object VIDEO_CALL: Route{
+        override val route = "video_call/{callId}"
+
+        fun createRoute(callId: Long):String {
+            return "video_call/${callId}"
+        }
     }
 
     data object PROFILE: Route{
