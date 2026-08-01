@@ -11,3 +11,14 @@ data class LoginResult(
     val accessToken: String,
     val refreshToken: String
 )
+
+data class RegisterRequest(
+    val email: String,
+    val password: String,
+    val name: String,
+    val profileImageUrl: String,
+    val nickname: String,
+    val gender: String,
+    val birthDate: String,
+    val phoneNumber: String
+)

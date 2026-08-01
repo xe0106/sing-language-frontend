@@ -16,7 +16,7 @@ import javax.inject.Singleton
 object NetworkModule {
 
     // Base URL - API 명세서 기준
-    private const val BASE_URL = "https://api.signlanguage.com/v1/"
+    private const val BASE_URL = "http://50.17.53.222/"
 
     @Provides
     @Singleton
