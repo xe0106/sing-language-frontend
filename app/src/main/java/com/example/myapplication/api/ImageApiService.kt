@@ -11,7 +11,7 @@ import retrofit2.http.Part
 interface ImageApiService {
 
     @Multipart
-    @POST("sign/language/image/upload")
+    @POST("sign/language/images/upload")
     suspend fun uploadImage(
         @Part file: MultipartBody.Part
     ): Response<ApiResponse<ImageUploadResult>>

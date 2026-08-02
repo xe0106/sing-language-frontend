@@ -102,7 +102,7 @@ class RegisterViewModel @Inject constructor(
             uiState=uiState.copy(
                 isLoading = false,
                 isNicknameSuccess = isSuccess,
-                errorMessage = if(isSuccess) null else "중복된 닉네임입니다."
+                errorMessage = if(isSuccess) "사용 가능한 닉네임입니다." else "중복된 닉네임입니다."
             )
         }
     }
