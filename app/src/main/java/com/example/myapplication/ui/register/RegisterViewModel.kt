@@ -1,14 +1,10 @@
 package com.example.myapplication.ui.register
 
-import android.R.attr.name
-import android.R.attr.password
-import android.R.attr.phoneNumber
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.myapplication.ui.login.LoginUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -23,14 +19,19 @@ class RegisterViewModel @Inject constructor(
     fun onProfileImageChange(
         profileImageUri: String?
     ) {
-        uiState = uiState.copy(profileImageUri = profileImageUri)
+        uiState = uiState.copy(
+            profileImageUri = profileImageUri,
+            profileImageUrl = null
+        )
     }
 
     fun onNicknameChange(
         nickname:String
     ){
         uiState=uiState.copy(
-            nickname=nickname
+            nickname=nickname,
+            isNicknameSuccess = false,
+            errorMessage = null
         )
     }
 
@@ -101,15 +102,37 @@ class RegisterViewModel @Inject constructor(
             uiState=uiState.copy(
                 isLoading = false,
                 isNicknameSuccess = isSuccess,
-                errorMessage = if(isSuccess) null else "중복된 닉네임입니다."
+                errorMessage = if(isSuccess) "사용 가능한 닉네임입니다." else "중복된 닉네임입니다."
             )
         }
     }
 
     fun register(){
+        // 중복 요청 방지
+        if (uiState.isLoading) {
+            return
+        }
+
+        if(!uiState.isNicknameSuccess) {
+            uiState=uiState.copy(
+                errorMessage = "닉네임 중복 확인을 해주세요."
+            )
+            return
+        }
+
         if (uiState.password != uiState.passwordConfirm) {
             uiState = uiState.copy(
                 errorMessage = "비밀번호가 일치하지 않습니다."
+            )
+            return
+        }
+
+        // 선택한 이미지의 안드로이드 로컬 URI
+        val profileImageUri = uiState.profileImageUri
+
+        if(profileImageUri.isNullOrBlank()) {
+            uiState=uiState.copy(
+                errorMessage = "프로필 이미지를 선택해 주세요."
             )
             return
         }
@@ -119,17 +142,43 @@ class RegisterViewModel @Inject constructor(
                 isLoading = true,
                 errorMessage = null
             )
+            // 이미 업로드된 URL이 있으면 재사용하고,
+            // 없으면 이미지 업로드 API를 호출
+            val profileImageUrl = uiState.profileImageUrl
+                ?: registerRepository.uploadProfileImage(
+                    profileImageUri = profileImageUri
+                )
+
+            if (profileImageUrl == null) {
+                uiState=uiState.copy(
+                    isLoading = false,
+                    errorMessage = "이미지 업로드에 실패했습니다."
+                )
+                return@launch
+            }
+
+            // 서버가 반환한 URL을 상태에 저장
+            uiState = uiState.copy(
+                profileImageUrl = profileImageUrl
+            )
 
             val isSuccess=registerRepository.register(
-                name=uiState.name,
-                email = uiState.email,
-                password = uiState.password
+                email = uiState.email.trim(),
+                password = uiState.password,
+                name = uiState.name.trim(),
+                profileImageUrl = profileImageUrl,
+                nickname = uiState.nickname.trim(),
+                gender = uiState.gender.name,
+                birthDate = uiState.birth.trim(),
+                phoneNumber = uiState.phoneNumber.trim()
             )
 
             uiState=uiState.copy(
                 isLoading = false,
                 isRegisterSuccess = isSuccess,
-                errorMessage = if(isSuccess) null else "회원가입에 실패했습니다."
+                errorMessage =
+                    if(isSuccess) null
+                    else "회원가입에 실패했습니다."
             )
         }
     }

@@ -257,7 +257,7 @@ private fun RegisterScreen1Content(
 
             CommonTextBox(
                 des = "생년월일",
-                phd = "사용자 입력",
+                phd = "ex) 2005-01-01",
                 value = uiState.birth,
                 onValueChange = onBirthChange
             )
@@ -266,7 +266,7 @@ private fun RegisterScreen1Content(
 
             CommonTextBox(
                 des = "전화번호",
-                phd = "사용자 입력",
+                phd = "ex) 01067890123",
                 value = uiState.phoneNumber,
                 onValueChange = onPhoneNumberChange
             )
