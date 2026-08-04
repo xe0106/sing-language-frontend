@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.myapplication.ui.lecture.component.Genre
+import com.example.myapplication.ui.lecture.component.LectureCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -19,10 +19,15 @@ class LectureViewModel @Inject constructor(
         private set
 
     init {
-        loadLectures()
+        loadLectures(
+            category = LectureCategory.BASIC
+        )
     }
 
-    fun loadLectures(){
+    private fun loadLectures(
+        category: LectureCategory = uiState.selectedCategory,
+        page: Int = 0
+    ){
         viewModelScope.launch{
             uiState=uiState.copy(
                 isLoading = true,
@@ -30,17 +35,24 @@ class LectureViewModel @Inject constructor(
             )
 
             runCatching {
-                val genres=lectureRepository.getGenres()
-                val lectures=lectureRepository.getLectures()
-
+                lectureRepository.getLectures(
+                    category = category,
+                    page = page,
+                    size = uiState.pageSize
+                )
+            }.onSuccess { result ->
                 uiState=uiState.copy(
-                    genres=genres,
-                    selectedGenre = genres.firstOrNull(),
-                    lectures=lectures,
+                    lectures = result.lectures,
+                    selectedCategory = category,
+                    pageNumber = result.pageNumber,
+                    pageSize = result.pageSize,
+                    totalElements = result.totalElements,
+                    totalPages = result.totalPages,
+                    completedCount = result.completedCount,
                     isLoading = false
                 )
             }.onFailure {
-                uiState=uiState.copy(
+                uiState = uiState.copy(
                     isLoading = false,
                     errorMessage = "강의 목록을 불러오지 못했습니다."
                 )
@@ -48,38 +60,20 @@ class LectureViewModel @Inject constructor(
         }
     }
 
-    fun onGenreClick(genre: Genre){
-        uiState=uiState.copy(selectedGenre = genre)
+    fun retryLectures() {
+        loadLectures(
+            category = uiState.selectedCategory,
+            page = 0
+        )
     }
 
-    fun loadLectureDetail(lectureId:Long){
-        viewModelScope.launch{
-            uiState=uiState.copy(
-                selectedLecture = null,
-                isDetailLoading = true,
-                detailErrorMessage = null
-            )
+    fun onCategoryClick(category: LectureCategory){
+        uiState=uiState.copy(selectedCategory = category)
 
-            runCatching {
-                lectureRepository.getLectureById(lectureId)
-            }.onSuccess { lecture->
-                uiState=uiState.copy(
-                    selectedLecture = lecture,
-                    isDetailLoading = false,
-                    detailErrorMessage = if(lecture==null){
-                        "강의를 찾을 수 없습니다."
-                    } else{
-                        null
-                    }
-                )
-            }.onFailure {
-                uiState=uiState.copy(
-                    selectedLecture = null,
-                    isDetailLoading = false,
-                    detailErrorMessage = "강의 정보를 불러오지 못했습니다."
-                )
-            }
-        }
+        loadLectures(
+            category = category,
+            page = 0
+        )
     }
 
     fun clearErrorMessage(){

@@ -41,23 +41,23 @@ import com.example.myapplication.ui.theme.KuitTheme
 @Composable
 fun LectureDetailScreen(
     lectureId: Long,
-    viewModel: LectureViewModel= hiltViewModel(),
+    viewModel: LectureDetailViewModel= hiltViewModel(),
     onBackClick: ()->Unit
 ){
     val uiState=viewModel.uiState
-    val lecture=uiState.selectedLecture
+    val lecture=uiState.lecture
 
     LaunchedEffect(lectureId) {
-        viewModel.loadLectureDetail(lectureId)
+        viewModel.loadLecture(lectureId)
     }
 
     when{
-        uiState.isDetailLoading->{
+        uiState.isLoading->{
             Text(text="불러오는 중...")
         }
 
-        uiState.detailErrorMessage !=null->{
-            Text(text = uiState.detailErrorMessage)
+        uiState.errorMessage !=null->{
+            Text(text = uiState.errorMessage)
         }
 
         lecture !=null ->{
@@ -133,7 +133,19 @@ private fun LectureDetailScreenContent(
                 )
             }
 
-            Spacer(modifier = Modifier.height(50.dp))
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(
+                modifier=Modifier
+                    .fillMaxWidth(),
+                color = Color(0XFF212121),
+                fontSize = 22.sp,
+                fontWeight = FontWeight.SemiBold,
+                lineHeight = 22.sp,
+                text=lecture.title
+            )
+
+            Spacer(modifier = Modifier.height(30.dp))
 
             AndroidView(
                 modifier = Modifier
@@ -144,6 +156,18 @@ private fun LectureDetailScreenContent(
                         this.player=player
                     }
                 }
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(
+                modifier=Modifier
+                    .fillMaxWidth(),
+                color = Color(0XFF96979B),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                lineHeight = 18.sp,
+                text=lecture.description
             )
         }
     }

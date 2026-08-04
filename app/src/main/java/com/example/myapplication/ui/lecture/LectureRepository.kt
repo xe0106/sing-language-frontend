@@ -1,12 +1,18 @@
 package com.example.myapplication.ui.lecture
 
-import com.example.myapplication.ui.lecture.component.Genre
 import com.example.myapplication.ui.lecture.component.Lecture
+import com.example.myapplication.ui.lecture.component.LectureCategory
+import com.example.myapplication.ui.lecture.component.LectureListResult
 
 interface LectureRepository {
-    suspend fun getGenres(): List<Genre>
 
-    suspend fun getLectures():List<Lecture>
+    suspend fun getLectures(
+        category: LectureCategory,
+        page: Int=0,
+        size: Int=10
+    ): LectureListResult
 
-    suspend fun getLectureById(id: Long): Lecture?
+    suspend fun getLectureById(
+        lectureId: Long
+    ): Lecture?
 }

@@ -4,8 +4,8 @@ data class Lecture(
     val id:Long,
     val title:String,
     val description: String,
-    val time:Int,
-    val genre:String,
+    val category: LectureCategory,
     val videoUrl:String,
-    val thumbnailUrl:String
+    val thumbnailUrl:String,
+    val isCompleted: Boolean
 )
