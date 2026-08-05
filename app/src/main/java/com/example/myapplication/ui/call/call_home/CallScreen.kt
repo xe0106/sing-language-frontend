@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -117,30 +116,20 @@ fun CallScreen(
             Spacer(modifier= Modifier.height(18.dp))
 
             ContactBox(
-                modifier = Modifier.padding(horizontal = 16.dp),
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .weight(weight = 1f, fill = false),
                 contacts = uiState.contacts,
-                onContactClick = onContactClick
-            )
-        }
-
-        FloatingActionButton(
-            onClick = {
-                val intent = Intent(Intent.ACTION_PICK).apply{
-                    type = ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE
+                onContactClick = onContactClick,
+                onAddContactClick = {
+                    val intent = Intent(Intent.ACTION_PICK).apply{
+                        type = ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE
+                    }
+                    pickContactLauncher.launch(intent)
                 }
-                pickContactLauncher.launch(intent)
-            },
-            modifier= Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end=24.dp, bottom = 140.dp),
-            containerColor = KuitTheme.colors.main1,
-            contentColor = KuitTheme.colors.white
-        ) {
-            Text(
-                text = "+",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold
             )
+
+            Spacer(modifier = Modifier.height(120.dp))
         }
     }
 }
