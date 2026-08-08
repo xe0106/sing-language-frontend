@@ -1,37 +1,52 @@
 package com.example.myapplication.ui.home
 
-import com.example.myapplication.network.SessionManager
+import com.example.myapplication.api.HomeApiService
+import java.io.IOException
 import javax.inject.Inject
 
 class HomeRepositoryImpl @Inject constructor(
-    private val homeApiService: HomeApiService,
-    private val sessionManager: SessionManager
+    private val homeApiService: HomeApiService
 ) : HomeRepository {
 
-    override suspend fun getHomeInfo(): HomeUiState {
-        // 로그인 시 저장된 userId 사용 (없으면 아직 로그인 전이므로 빈 상태 반환)
-        val userId = sessionManager.userId ?: return HomeUiState(isLoading = false)
+    override suspend fun getHome(): HomeUiState {
+        return try {
+            val response = homeApiService.getHome()
+            val body = response.body()
+            val data = body?.data
 
-        val data = homeApiService.getHomeInfo(userId).data
+            when {
+                response.code() == 401 || response.code() == 403 ->
+                    HomeUiState(
+                        isLoading = false,
+                        errorMessage = "로그인이 만료되었습니다. 다시 로그인해 주세요."
+                    )
 
-        return HomeUiState(
-            userName = data?.nickname ?: data?.name ?: "",
-            // 명세서에 '오늘의 미션' 필드가 없어 학습 일수로 임시 표기
-            // TODO: 미션 관련 API/필드 확정되면 교체
-            todayMission = data?.learningDays?.let { "연속 학습 ${it}일째" } ?: "",
-            progress = 0f,   // TODO: 진행률 필드/API 확정되면 반영
-            isLoading = false
-        )
+                response.isSuccessful && body?.isSuccess == true && data != null ->
+                    HomeUiState(
+                        currentDate = data.currentDate.orEmpty(),
+                        greetingMessage = data.greetingMessage.orEmpty(),
+                        goalTitle = data.goalTitle.orEmpty(),
+                        // 서버는 0~100 정수. Compose 진행바는 0f~1f 이므로 변환 + 범위 보정
+                        progress = (data.progressPercentage ?: 0).coerceIn(0, 100) / 100f,
+                        isLoading = false
+                    )
+
+                else ->
+                    HomeUiState(
+                        isLoading = false,
+                        errorMessage = body?.message ?: "홈 정보를 불러오지 못했습니다."
+                    )
+            }
+        } catch (exception: IOException) {
+            HomeUiState(
+                isLoading = false,
+                errorMessage = "네트워크 연결을 확인해 주세요."
+            )
+        } catch (exception: Exception) {
+            HomeUiState(
+                isLoading = false,
+                errorMessage = "홈 정보를 불러오지 못했습니다."
+            )
+        }
     }
-
-    /* 임의 반환 값(더미 데이터) - API 연동으로 교체하면서 일단 주석 처리
-    override suspend fun getHomeInfo(): HomeUiState {
-        return HomeUiState(
-            userName = "사용자 이름",
-            todayMission = "수어 단어 5개 익히기",
-            progress = 0.4f,
-            isLoading = false
-        )
-    }
-    */
 }

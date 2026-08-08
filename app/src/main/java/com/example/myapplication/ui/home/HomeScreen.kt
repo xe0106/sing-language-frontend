@@ -60,13 +60,13 @@ fun HomeScreen(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "05/23 (토)",
+                        text = uiState.currentDate,
                         color = KuitTheme.colors.gray1,
                         fontSize = 12.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "좋은 아침이에요,\n${uiState.userName}님!",
+                        text = uiState.greetingMessage,
                         color = KuitTheme.colors.black,
                         fontSize = 20.sp
                     )
@@ -79,7 +79,7 @@ fun HomeScreen(
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = uiState.todayMission,
+                text = uiState.goalTitle,
                 color = KuitTheme.colors.black,
                 fontSize = 14.sp
             )
@@ -133,6 +133,7 @@ fun HomeScreen(
         }
 
         // 최근 연락처
+        // TODO: GET /sign/language/home/recent?limit=2 응답 확인 후 서버 데이터로 교체
         Column(
             modifier = Modifier
                 .fillMaxWidth()
