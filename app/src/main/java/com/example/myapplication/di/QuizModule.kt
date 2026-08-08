@@ -1,6 +1,6 @@
 package com.example.myapplication.di
 
-import com.example.myapplication.ui.quiz.QuizApiService
+import com.example.myapplication.api.QuizApiService
 import com.example.myapplication.ui.quiz.QuizRepository
 import com.example.myapplication.ui.quiz.QuizRepositoryImpl
 import dagger.Binds

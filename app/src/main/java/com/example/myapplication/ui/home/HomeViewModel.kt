@@ -19,19 +19,14 @@ class HomeViewModel @Inject constructor(
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
-        loadHomeInfo()
+        loadHome()
     }
 
-    private fun loadHomeInfo() {
+    /** 화면 재진입 시 갱신하고 싶으면 화면에서 호출 */
+    fun loadHome() {
         viewModelScope.launch {
-            runCatching {
-                homeRepository.getHomeInfo()
-            }.onSuccess { state ->
-                _uiState.value = state
-            }.onFailure {
-                // 서버 미연결/통신 실패 시 앱이 죽지 않도록 처리
-                _uiState.update { it.copy(isLoading = false) }
-            }
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            _uiState.value = homeRepository.getHome()
         }
     }
 }
