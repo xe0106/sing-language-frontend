@@ -1,5 +1,7 @@
 package com.example.myapplication.ui.lecture
 
+import android.view.LayoutInflater
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -41,23 +43,23 @@ import com.example.myapplication.ui.theme.KuitTheme
 @Composable
 fun LectureDetailScreen(
     lectureId: Long,
-    viewModel: LectureViewModel= hiltViewModel(),
+    viewModel: LectureDetailViewModel= hiltViewModel(),
     onBackClick: ()->Unit
 ){
     val uiState=viewModel.uiState
-    val lecture=uiState.selectedLecture
+    val lecture=uiState.lecture
 
     LaunchedEffect(lectureId) {
-        viewModel.loadLectureDetail(lectureId)
+        viewModel.loadLecture(lectureId)
     }
 
     when{
-        uiState.isDetailLoading->{
+        uiState.isLoading->{
             Text(text="불러오는 중...")
         }
 
-        uiState.detailErrorMessage !=null->{
-            Text(text = uiState.detailErrorMessage)
+        uiState.errorMessage !=null->{
+            Text(text = uiState.errorMessage)
         }
 
         lecture !=null ->{
@@ -77,7 +79,7 @@ private fun LectureDetailScreenContent(
 ){
     val context= LocalContext.current
 
-    val player = remember(lecture.videoUrl){
+    val exoPlayer = remember(lecture.videoUrl){
         ExoPlayer.Builder(context).build().apply{
             setMediaItem(MediaItem.fromUri(lecture.videoUrl))
             prepare()
@@ -85,9 +87,38 @@ private fun LectureDetailScreenContent(
         }
     }
 
-    DisposableEffect(player){
+    val playerView = remember(context, exoPlayer) {
+        LayoutInflater.from(context)
+            .inflate(
+                R.layout.view_lecture_player,
+                null,
+                false
+            )
+            .let {it as PlayerView}
+            .apply {
+                player = exoPlayer
+            }
+    }
+
+    val closeLectureScreen = {
+        playerView.player = null
+
+        exoPlayer.pause()
+        exoPlayer.stop()
+        exoPlayer.clearVideoSurface()
+
+        onBackClick()
+    }
+
+    BackHandler {
+        closeLectureScreen()
+    }
+
+    DisposableEffect(exoPlayer, playerView){
         onDispose {
-            player.release()
+            playerView.player = null
+            exoPlayer.clearVideoSurface()
+            exoPlayer.release()
         }
     }
 
@@ -120,7 +151,9 @@ private fun LectureDetailScreenContent(
                     tint = Color(0xFF000000),
                     modifier = Modifier
                         .size(width = 10.dp, height = 19.dp)
-                        .clickable { onBackClick() }
+                        .clickable {
+                            closeLectureScreen()
+                        }
                 )
                 Spacer(modifier = Modifier.width(8.dp))
 
@@ -133,17 +166,39 @@ private fun LectureDetailScreenContent(
                 )
             }
 
-            Spacer(modifier = Modifier.height(50.dp))
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(
+                modifier=Modifier
+                    .fillMaxWidth(),
+                color = Color(0XFF212121),
+                fontSize = 22.sp,
+                fontWeight = FontWeight.SemiBold,
+                lineHeight = 22.sp,
+                text=lecture.title
+            )
+
+            Spacer(modifier = Modifier.height(30.dp))
 
             AndroidView(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(16f/9f),
                 factory = {
-                    PlayerView(it).apply{
-                        this.player=player
-                    }
+                    playerView
                 }
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(
+                modifier=Modifier
+                    .fillMaxWidth(),
+                color = Color(0XFF96979B),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                lineHeight = 18.sp,
+                text=lecture.description
             )
         }
     }

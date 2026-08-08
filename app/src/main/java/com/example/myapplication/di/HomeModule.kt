@@ -1,6 +1,6 @@
 package com.example.myapplication.di
 
-import com.example.myapplication.ui.home.HomeApiService
+import com.example.myapplication.api.HomeApiService
 import com.example.myapplication.ui.home.HomeRepository
 import com.example.myapplication.ui.home.HomeRepositoryImpl
 import dagger.Binds

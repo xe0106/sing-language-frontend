@@ -39,13 +39,13 @@ fun LectureInfo(
             text=lecture.description
         )
 
-        Text(
+        /*Text(
             modifier=Modifier
                 .fillMaxWidth()
                 .height(22.dp),
             color = Color(0XFF96979B),
             style = KuitTheme.typography.R_12,
             text="${lecture.time}초"
-        )
+        )*/
     }
 }

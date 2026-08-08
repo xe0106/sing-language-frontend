@@ -57,13 +57,11 @@ fun LectureScreen(
 
             Spacer(modifier=Modifier.height(8.dp))
 
-            uiState.selectedGenre?.let{selectedGenre->
-                GenreBox(
-                    genres = uiState.genres,
-                    selectedGenre = selectedGenre,
-                    onGenreClick = viewModel::onGenreClick
-                )
-            }
+            GenreBox(
+                categories = uiState.categories,
+                selectedCategory = uiState.selectedCategory,
+                onCategoryClick = viewModel::onCategoryClick
+            )
 
             Spacer(modifier=Modifier.height(38.dp))
 
@@ -96,7 +94,7 @@ fun LectureScreen(
                                 )
 
                                 TextButton(
-                                    onClick = viewModel::loadLectures
+                                    onClick = viewModel::retryLectures
                                 ) {
                                     Text(text = "다시 시도")
                                 }
@@ -104,7 +102,7 @@ fun LectureScreen(
                         }
                     }
 
-                    uiState.filteredLectures.isEmpty() -> {
+                    uiState.lectures.isEmpty() -> {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
@@ -125,7 +123,7 @@ fun LectureScreen(
                             verticalArrangement = Arrangement.spacedBy(16.dp),
                             contentPadding = PaddingValues(bottom = 120.dp)
                         ) {
-                            items(uiState.filteredLectures) { lecture ->
+                            items(uiState.lectures) { lecture ->
                                 LectureCard(
                                     lecture = lecture,
                                     onClick = {

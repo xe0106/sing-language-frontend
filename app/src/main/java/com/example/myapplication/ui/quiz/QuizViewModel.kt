@@ -18,43 +18,73 @@ class QuizViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(QuizUiState())
     val uiState: StateFlow<QuizUiState> = _uiState.asStateFlow()
 
-    // 서버에서 받아온 전체 퀴즈 목록과 현재 문제 인덱스
-    private var quizzes: List<QuizUiState> = emptyList()
-    private var currentIndex: Int = 0
-
     init {
         loadQuizzes()
     }
 
-    private fun loadQuizzes() {
+    fun loadQuizzes(count: Int = 5) {
         viewModelScope.launch {
-            runCatching {
-                quizRepository.getQuizzes()
-            }.onSuccess { list ->
-                quizzes = list
-                currentIndex = 0
-                if (list.isNotEmpty()) {
-                    _uiState.value = list[0]
-                } else {
-                    _uiState.update { it.copy(isLoading = false) }
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
+            quizRepository.getQuizzes(count)
+                .onSuccess { list ->
+                    _uiState.value = QuizUiState(
+                        quizzes = list,
+                        isLoading = false
+                    )
                 }
-            }.onFailure {
-                // 서버 미연결/통신 실패 시 앱이 죽지 않도록 처리
-                _uiState.update { it.copy(isLoading = false) }
+                .onFailure { throwable ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = throwable.message ?: "퀴즈를 불러오지 못했습니다."
+                        )
+                    }
+                }
+        }
+    }
+
+    /** 보기 선택 → 즉시 채점(로컬) + 서버에 제출 */
+    fun selectOption(index: Int) {
+        val state = _uiState.value
+        // 이미 정답을 공개한 뒤에는 다시 못 고르게 한다
+        if (state.isAnswerRevealed) return
+        val quiz = state.currentQuiz ?: return
+
+        val isCorrect = index == quiz.correctOptionIndex
+
+        _uiState.update {
+            it.copy(
+                selectedIndex = index,
+                isAnswerRevealed = true,
+                correctCount = if (isCorrect) it.correctCount + 1 else it.correctCount
+            )
+        }
+
+        // 서버 제출은 실패해도 화면에 영향 없음 (로컬 채점이 이미 끝났으므로)
+        viewModelScope.launch {
+            quizRepository.submitQuiz(quizId = quiz.quizId, selectedIndex = index)
+        }
+    }
+
+    /** 다음 문제로. 마지막이면 종료 상태로 전환 */
+    fun nextQuiz() {
+        val state = _uiState.value
+        if (state.isLastQuiz) {
+            _uiState.update { it.copy(isFinished = true) }
+        } else {
+            _uiState.update {
+                it.copy(
+                    currentIndex = it.currentIndex + 1,
+                    selectedIndex = null,
+                    isAnswerRevealed = false
+                )
             }
         }
     }
 
-    fun selectOption(option: String) {
-        _uiState.update { it.copy(selectedOption = option) }
-        // TODO: 답안 제출/채점(POST /quizzes/{quizId}/submit)은 userId 전달 방식 확정 후 연동
-    }
-
-    /** 다음 문제로 이동 (마지막이면 그대로 유지) */
-    fun nextQuiz() {
-        if (currentIndex < quizzes.lastIndex) {
-            currentIndex++
-            _uiState.value = quizzes[currentIndex]
-        }
+    /** 처음부터 다시 (새 문제 세트를 받아온다) */
+    fun restart() {
+        loadQuizzes()
     }
 }

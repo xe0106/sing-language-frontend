@@ -27,7 +27,7 @@ object NetworkModule {
             .addInterceptor(authInterceptor)
             .addInterceptor(
                 HttpLoggingInterceptor().apply {
-                    level = HttpLoggingInterceptor.Level.BODY   // 개발용 로그 (릴리즈 때 제거)
+                    level = HttpLoggingInterceptor.Level.BASIC   // 개발용 로그 (릴리즈 때 제거)
                 }
             )
             .build()
