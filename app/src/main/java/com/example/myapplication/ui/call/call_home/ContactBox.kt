@@ -74,7 +74,7 @@ fun ContactBox(
         ) {
             itemsIndexed(
                 items = contacts,
-                key = { _, contact -> contact.id }
+                key = { _, contact -> contact.contactId }
             ) { index, contact ->
 
                 Row(

@@ -139,7 +139,7 @@ fun MainNavHost(
                 },
                 onContactClick = {contact->
                     navController.navigate(
-                        Route.VIDEO_CALL.createRoute(contact.id)
+                        Route.VIDEO_CALL.createRoute(contact.targetUserId)
                     )
                 }
             )
