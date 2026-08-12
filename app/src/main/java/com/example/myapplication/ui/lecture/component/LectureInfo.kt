@@ -20,12 +20,12 @@ fun LectureInfo(
     Column(
         modifier=modifier
             .width(159.dp)
-            .height(76.dp)
+            .height(100.dp)
     ){
         Text(
             modifier=Modifier
-                .fillMaxWidth()
-                .height(36.dp),
+                .fillMaxWidth(),
+                //.height(45.dp),
             color = Color(0XFF212121),
             style = KuitTheme.typography.B_18,
             text=lecture.title
@@ -33,8 +33,8 @@ fun LectureInfo(
 
         Text(
             modifier=Modifier
-                .fillMaxWidth()
-                .height(36.dp),
+                .fillMaxWidth(),
+                //.height(55.dp),
             color = Color(0XFF96979B),
             style = KuitTheme.typography.M_12,
             text=lecture.description

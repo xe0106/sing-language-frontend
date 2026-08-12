@@ -1,5 +1,6 @@
 package com.example.myapplication.ui.register
 
+import com.example.myapplication.R
 import com.example.myapplication.api.AuthApiService
 import com.example.myapplication.api.ImageApiService
 import com.example.myapplication.dto.RegisterRequest
@@ -16,12 +17,19 @@ class RegisterRepositoryImpl @Inject constructor(
 ): RegisterRepository{
 
     override suspend fun uploadProfileImage(
-        profileImageUri: String
+        profileImageUri: String?
     ): String? = withContext(Dispatchers.IO){
         try {
-            val imagePart = imagePartFactory.create(
-                imageUri = profileImageUri
-            ) ?: return@withContext null
+            val imagePart =
+                if (profileImageUri.isNullOrBlank()) {
+                    imagePartFactory.createFromResource(
+                        imageResourceId = R.drawable.basic_profile2
+                    )
+                } else {
+                    imagePartFactory.create(
+                        imageUri = profileImageUri
+                    ) ?: return@withContext null
+                }
 
             val response = imageApiService.uploadImage(
                 file = imagePart

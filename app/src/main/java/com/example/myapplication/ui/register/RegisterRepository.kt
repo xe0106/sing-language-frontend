@@ -2,7 +2,7 @@ package com.example.myapplication.ui.register
 
 interface RegisterRepository {
     suspend fun uploadProfileImage(
-        profileImageUri: String
+        profileImageUri: String?
     ): String?
 
     suspend fun nicknameCheck(

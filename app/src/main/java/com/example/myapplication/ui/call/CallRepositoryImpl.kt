@@ -48,7 +48,7 @@ class CallRepositoryImpl @Inject constructor(
     override suspend fun addContact(contact: DeviceContact) {
         val response = callApiService.insertContact(
             request = ContactInsertRequest(
-                phoneNumber = contact.phoneNumber,
+                phoneNumber = normalizePhoneNumber(contact.phoneNumber),
                 contactName = contact.name,
                 profileImageUrl = null
             )
@@ -62,6 +62,23 @@ class CallRepositoryImpl @Inject constructor(
         ) {
             throw IllegalStateException(
                 body?.message ?: "연락처 추가에 실패했습니다."
+            )
+        }
+    }
+
+    override suspend fun deleteContact(targetUserId: Long) {
+        val response = callApiService.deleteContact(
+            targetUserId = targetUserId
+        )
+
+        val body = response.body()
+
+        if(
+            !response.isSuccessful ||
+            body?.isSuccess != true
+        ) {
+            throw IllegalStateException(
+                body?.message ?: "연락처 삭제에 실패했습니다."
             )
         }
     }
@@ -155,4 +172,16 @@ private fun ContactResponse.toContact(): Contact {
         name = contactName,
         profileImageUrl = profileImageUrl
     )
+}
+
+private fun normalizePhoneNumber(
+    phoneNumber: String
+): String {
+    val digits = phoneNumber.filter(Char::isDigit)
+
+    return if (digits.startsWith("82")) {
+        "0${digits.removePrefix("82")}"
+    } else {
+        digits
+    }
 }
