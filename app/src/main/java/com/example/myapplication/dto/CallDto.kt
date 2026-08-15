@@ -22,3 +22,25 @@ data class ContactInsertResponse(
     val contactName: String,
     val createdAt: String
 )
+
+data class CallOutRequest(
+    val callerId: Long,
+    val receiverId: Long
+)
+
+data class CallOutResponse(
+    val callId: String,
+    val callerId: Long,
+    val receiverId: Long,
+    val status: String,
+    val startedAt: String,
+    val endedAt: String?
+)
+
+data class SubtitleResponse(
+    val subtitleId: Long,
+    val callId: String,
+    val senderId: Long,
+    val textContent: String,
+    val createdAt: String
+)

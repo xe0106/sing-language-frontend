@@ -17,9 +17,9 @@ class VideoCallViewModel @Inject constructor(
     var uiState by mutableStateOf(VideoCallUiState())
         private set
 
-    private var loadedCallId: Long? = null
+    private var loadedCallId: String? = null
 
-    fun loadCall(callId: Long) {
+    fun loadCall(callId: String) {
         if(loadedCallId == callId) return
         loadedCallId = callId
 

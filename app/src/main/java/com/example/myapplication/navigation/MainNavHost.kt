@@ -139,7 +139,7 @@ fun MainNavHost(
                 },
                 onContactClick = {contact->
                     navController.navigate(
-                        Route.VIDEO_CALL.createRoute(contact.targetUserId)
+                        Route.VIDEO_CALL.createRoute(contact.name)//todo 수정필요
                     )
                 }
             )
@@ -148,7 +148,6 @@ fun MainNavHost(
         composable(Route.CALL_RECEIVE.route) { backStackEntry ->
             val callId = backStackEntry.arguments
                 ?.getString("callId")
-                ?.toLongOrNull()
 
             if (callId != null) {
                 CallReceiveScreen(
@@ -176,7 +175,6 @@ fun MainNavHost(
         composable(Route.VIDEO_CALL.route) { backStackEntry ->
             val callId = backStackEntry.arguments
                 ?.getString("callId")
-                ?.toLongOrNull()
 
             if (callId != null) {
                 VideoCallScreen(

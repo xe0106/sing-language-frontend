@@ -1,7 +1,7 @@
 package com.example.myapplication.ui.call.video_call
 
 data class VideoCallUiState(
-    val callId: Long? = null,
+    val callId: String? = null,
     val remoteName: String = "",
     val connectionState: CallConnectionState = CallConnectionState.CONNECTING,
     val isLocalVideoReady: Boolean = false,

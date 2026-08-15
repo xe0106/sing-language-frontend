@@ -20,7 +20,7 @@ import com.example.myapplication.ui.call.video_call.component.RemoteVideoView
 
 @Composable
 fun VideoCallScreen(
-    callId: Long,
+    callId: String,
     onCallEnded: () -> Unit,
     modifier: Modifier= Modifier,
     viewModel: VideoCallViewModel = hiltViewModel()
