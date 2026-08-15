@@ -9,7 +9,7 @@ import javax.inject.Inject
 class DeviceContactReader @Inject constructor(
     @param:ApplicationContext private val context: Context
 ){
-    fun readContact(uri: Uri): Contact {
+    fun readContact(uri: Uri): DeviceContact {
         val projection = arrayOf(
             ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
             ContactsContract.CommonDataKinds.Phone.NUMBER,
@@ -45,8 +45,7 @@ class DeviceContactReader @Inject constructor(
                 )
             )
 
-            return Contact(
-                id = 0L,
+            return DeviceContact(
                 name = name,
                 phoneNumber = phoneNumber,
                 profileImageUrl = profileImageUrl

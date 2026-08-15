@@ -174,7 +174,7 @@ fun MainNavHost(
                 CallScreen(
                     onSettingsClick = { navController.navigate(Route.SETTINGS.route) },
                     onContactClick = { contact ->
-                        navController.navigate(Route.VIDEO_CALL.createRoute(contact.id))
+                        navController.navigate(Route.VIDEO_CALL.createRoute(contact.targetUserId))
                     }
                 )
             }

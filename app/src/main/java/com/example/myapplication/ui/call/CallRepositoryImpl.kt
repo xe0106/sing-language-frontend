@@ -1,6 +1,10 @@
 package com.example.myapplication.ui.call
 
+import com.example.myapplication.api.CallApiService
+import com.example.myapplication.dto.ContactInsertRequest
+import com.example.myapplication.dto.ContactResponse
 import com.example.myapplication.ui.call.call_home.Contact
+import com.example.myapplication.ui.call.call_home.DeviceContact
 import com.example.myapplication.ui.call.call_receive.IncomingCall
 import com.example.myapplication.ui.call.video_call.CallMessage
 import com.example.myapplication.ui.call.video_call.VideoCallSession
@@ -10,28 +14,56 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class CallRepositoryImpl @Inject constructor() : CallRepository{
-    private val contacts = mutableListOf<Contact>(
-        Contact(id = 1L, name = "엄마", phoneNumber = "010-0000-0001"),
-        Contact(id = 2L, name = "동생", phoneNumber = "010-0000-0002")
-    )
+class CallRepositoryImpl @Inject constructor(
+    private val callApiService: CallApiService
+) : CallRepository{
+    private var contacts: List<Contact> = emptyList()
 
     private val incomingCalls = mutableMapOf<Long, IncomingCall>()
     private val videoCallSessions = mutableMapOf<Long, VideoCallSession>()
     private val messageId = AtomicLong(0L)
 
     override suspend fun getContacts(): List<Contact> {
-        delay(MOCK_REQUEST_DELAY)
-        return contacts.toList()
+        /*delay(MOCK_REQUEST_DELAY)
+        return contacts.toList()*/
+
+        val response = callApiService.viewContactList()
+
+        val body = response.body()
+
+        if(
+            !response.isSuccessful ||
+            body?.isSuccess != true
+        ) {
+            throw IllegalStateException(
+                body?.message ?: "연락처 목록 조회에 실패했습니다."
+            )
+        }
+
+        return body.data.orEmpty()
+            .map(ContactResponse::toContact)
+            .also {contacts = it}
     }
 
-    override suspend fun addContact(contact: Contact) {
-        delay(MOCK_REQUEST_DELAY)
-
-        val newContact = contact.copy(
-            id=(contacts.maxOfOrNull {it.id}?:0L)+1L
+    override suspend fun addContact(contact: DeviceContact) {
+        val response = callApiService.insertContact(
+            request = ContactInsertRequest(
+                phoneNumber = contact.phoneNumber,
+                contactName = contact.name,
+                profileImageUrl = null
+            )
         )
-        contacts.add(newContact)
+
+        val body = response.body()
+
+        if(
+            !response.isSuccessful ||
+            body?.isSuccess != true
+        ) {
+            throw IllegalStateException(
+                body?.message ?: "연락처 추가에 실패했습니다."
+            )
+        }
     }
 
     override suspend fun getIncomingCall(callId: Long): IncomingCall {
@@ -66,7 +98,7 @@ class CallRepositoryImpl @Inject constructor() : CallRepository{
         delay(MOCK_REQUEST_DELAY)
 
         return videoCallSessions.getOrPut(callId) {
-            val contact = contacts.firstOrNull { it.id == callId }
+            val contact = contacts.firstOrNull { it.contactId == callId }
 
             VideoCallSession(
                 callId = callId,
@@ -114,4 +146,13 @@ class CallRepositoryImpl @Inject constructor() : CallRepository{
         const val MOCK_CONNECTION_DELAY = 2_000L
         const val MOCK_MESSAGE_DELAY = 200L
     }
+}
+
+private fun ContactResponse.toContact(): Contact {
+    return Contact(
+        contactId = contactId,
+        targetUserId = targetUserId,
+        name = contactName,
+        profileImageUrl = profileImageUrl
+    )
 }

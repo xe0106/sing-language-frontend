@@ -1,8 +1,8 @@
 package com.example.myapplication.ui.call.call_home
 
-data class Contact(
-    val id: Long,
+data class Contact(     //서버용 연락체 모델
+    val contactId: Long,
+    val targetUserId: Long,
     val name: String,
-    val phoneNumber: String,
     val profileImageUrl: String?=null
 )
