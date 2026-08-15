@@ -12,4 +12,10 @@ interface ProfileRepository {
         profileImageUrl: String?,
         notificationEnabled: Boolean?
     ): Boolean
+
+    /** 로그아웃 */
+    suspend fun logout()
+
+    /** 회원 탈퇴 */
+    suspend fun withdraw(): Boolean
 }

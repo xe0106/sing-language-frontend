@@ -16,12 +16,12 @@ import javax.inject.Singleton
 abstract class ProfileModule {
 
     @Binds
-    @Singleton
     abstract fun bindProfileRepository(
         impl: ProfileRepositoryImpl
     ): ProfileRepository
 
     companion object {
+
         @Provides
         @Singleton
         fun provideProfileApiService(retrofit: Retrofit): ProfileApiService =
