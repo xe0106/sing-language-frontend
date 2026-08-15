@@ -10,6 +10,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,16 +23,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myapplication.R
 import com.example.myapplication.ui.theme.KuitTheme
 
 @Composable
 fun MyPageScreen(
+    viewModel: MyPageViewModel = hiltViewModel(),
     onSettingsClick: () -> Unit = {},
     onAppInfoClick: () -> Unit = {},
-    onLogoutClick: () -> Unit = {},
-    onWithdrawClick: () -> Unit = {}
+    onLoggedOut: () -> Unit = {}
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    // 로그아웃 / 탈퇴 완료 시 로그인 화면으로 이동
+    LaunchedEffect(Unit) {
+        viewModel.event.collect { event ->
+            when (event) {
+                MyPageEvent.NavigateToLogin -> onLoggedOut()
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -111,9 +126,8 @@ fun MyPageScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // TODO: 서버 연동 시 ViewModel 값으로 교체
             Text(
-                text = "사용자 이름",
+                text = uiState.profile?.nickname ?: "사용자 이름",
                 color = KuitTheme.colors.black,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -121,7 +135,7 @@ fun MyPageScreen(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "user@example.com",
+                text = uiState.profile?.email ?: "user@example.com",
                 color = Color(0xFFA3A3A3),
                 fontSize = 12.sp,
                 letterSpacing = (-0.24).sp
@@ -214,12 +228,12 @@ fun MyPageScreen(
             MyPageMenuItem(
                 iconRes = R.drawable.ic_logout,
                 text = "로그아웃",
-                onClick = onLogoutClick
+                onClick = { viewModel.logout() }
             )
             MyPageMenuItem(
                 iconRes = R.drawable.ic_withdraw,
                 text = "회원 탈퇴",
-                onClick = onWithdrawClick
+                onClick = { viewModel.withdraw() }
             )
         }
     }
@@ -251,10 +265,4 @@ private fun MyPageMenuItem(
             fontSize = 14.sp
         )
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun MyPageScreenPreview() {
-    MyPageScreen()
 }

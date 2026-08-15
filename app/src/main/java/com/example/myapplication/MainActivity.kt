@@ -4,64 +4,55 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.navigation.BottomNavBar
 import com.example.myapplication.navigation.MainNavHost
 import com.example.myapplication.navigation.NavTab
-import com.example.myapplication.ui.home.HomeScreen
-import com.example.myapplication.ui.quiz.QuizScreen
-import com.example.myapplication.ui.theme.KuitTheme
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
             MyApplicationTheme {
-                val navController= rememberNavController()
-                val currentRoute=navController
-                    .currentBackStackEntryAsState()
-                    .value
-                    ?.destination
-                    ?.route
+                val navController = rememberNavController()
 
-                val bottomNavRoutes= NavTab.entries.map{it.route.route}
-                val showBottomBar=currentRoute in bottomNavRoutes
+                val backStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = backStackEntry?.destination?.route
+
+                // 바텀바는 탭 화면(홈/강의/통화/마이페이지)에서만 노출.
+                // 로그인, 퀴즈, 강의상세, 영상통화, 설정 화면에서는 자동으로 숨겨진다.
+                val showBottomBar = NavTab.entries.any { it.route.route == currentRoute }
 
                 Scaffold(
-                    modifier=Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize(),
                     containerColor = Color.Transparent,
                     contentWindowInsets = WindowInsets(0),
                     bottomBar = {
-                        if(showBottomBar) {
-                            BottomNavBar(navController=navController)
+                        if (showBottomBar) {
+                            BottomNavBar(navController = navController)
                         }
                     }
-                ) {
+                ) { innerPadding ->
+                    // innerPadding 을 적용해야 화면 내용 하단이 바텀바에 가려지지 않는다.
                     MainNavHost(
-                        navController=navController,
-                        modifier=Modifier.fillMaxSize()
+                        navController = navController,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
                     )
                 }
             }

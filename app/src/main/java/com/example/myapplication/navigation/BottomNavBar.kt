@@ -3,7 +3,6 @@ package com.example.myapplication.navigation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -23,9 +22,9 @@ import com.example.myapplication.ui.theme.KuitTheme
 fun BottomNavBar(
     navController: NavHostController
 ){
-    val tabs= NavTab.entries
+    val tabs = NavTab.entries
 
-    val currentRoute=navController.currentBackStackEntryAsState()
+    val currentRoute = navController.currentBackStackEntryAsState()
         .value
         ?.destination
         ?.route
@@ -46,24 +45,18 @@ fun BottomNavBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ){
-        tabs.forEach{tab->
+        tabs.forEach{ tab ->
 
-            val isSelected=currentRoute==tab.route.route
+            val isSelected = currentRoute == tab.route.route
 
             NavItem(
-                icon=tab.icon,
-                text=tab.label,
-                isSelected=isSelected,
+                icon = tab.icon,
+                text = tab.label,
+                isSelected = isSelected,
                 modifier = Modifier.weight(1f),
                 onClick = {
                     if (!isSelected) {
-                        navController.navigate(tab.route.route) {
-                            popUpTo(Route.HOME.route) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                        navController.navigateToTab(tab.route.route)
                     }
                 }
             )
