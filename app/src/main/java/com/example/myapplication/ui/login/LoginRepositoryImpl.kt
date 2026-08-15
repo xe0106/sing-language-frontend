@@ -33,9 +33,10 @@ class LoginRepositoryImpl @Inject constructor(
                 body?.isSuccess ==true &&
                 result != null
             ){
-                sessionManager.updateTokens(
+                sessionManager.updateSession(
                     accessToken = result.accessToken,
-                    refreshToken = result.refreshToken
+                    refreshToken = result.refreshToken,
+                    userId = result.userId
                 )
 
                 true

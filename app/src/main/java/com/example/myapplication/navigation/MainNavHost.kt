@@ -35,9 +35,11 @@ const val RESULT_QUIZ_COMPLETED = "result_quiz_completed"
  */
 fun NavHostController.navigateToTab(route: String) {
     navigate(route) {
-        popUpTo(Route.HOME.route) { inclusive = false }
+        popUpTo(Route.HOME.route) {
+            saveState = true
+        }
         launchSingleTop = true
-        restoreState = false
+        restoreState = true
     }
 }
 
