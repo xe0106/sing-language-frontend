@@ -26,7 +26,7 @@ import com.example.myapplication.ui.theme.KuitTheme
 
 @Composable
 fun CallReceiveScreen(
-    callId: Long,
+    callId: String,
     modifier: Modifier =Modifier,
     viewModel: CallReceiveViewModel = hiltViewModel(),
     onAcceptSuccess: ()->Unit,

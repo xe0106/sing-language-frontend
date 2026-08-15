@@ -10,14 +10,14 @@ import com.example.myapplication.ui.call.video_call.VideoCallSession
 interface CallRepository {
     suspend fun getContacts():List<Contact>
     suspend fun addContact(contact: DeviceContact)
+    suspend fun deleteContact(targetUserId: Long)
+    suspend fun getIncomingCall(callId: String): IncomingCall
+    suspend fun acceptCall(callId: String)
+    suspend fun rejectCall(callId: String)
 
-    suspend fun getIncomingCall(callId: Long): IncomingCall
-    suspend fun acceptCall(callId: Long)
-    suspend fun rejectCall(callId: Long)
 
-
-    suspend fun getVideoCallSession(callId: Long): VideoCallSession
-    suspend fun connectVideoCall(callId: Long)
-    suspend fun sendCallMessage(callId: Long, text: String): CallMessage
-    suspend fun endVideoCall(callId: Long)
+    suspend fun getVideoCallSession(callId: String): VideoCallSession
+    suspend fun connectVideoCall(callId: String)
+    suspend fun sendCallMessage(callId: String, text: String): CallMessage
+    suspend fun endVideoCall(callId: String)
 }

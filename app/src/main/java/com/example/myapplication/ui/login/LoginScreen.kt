@@ -131,7 +131,8 @@ private fun LoginScreenContent(
 
             CommonButton(
                 onClick = onLoginClick,
-                buttonName = "로그인"
+                buttonName = "로그인",
+                isLoading = uiState.isLoading
             )
 
             Spacer(modifier= Modifier.height(22.43.dp))

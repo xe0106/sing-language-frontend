@@ -121,6 +121,7 @@ fun CallScreen(
                     .weight(weight = 1f, fill = false),
                 contacts = uiState.contacts,
                 onContactClick = onContactClick,
+                onDeleteContact = viewModel::deleteContact,
                 onAddContactClick = {
                     val intent = Intent(Intent.ACTION_PICK).apply{
                         type = ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE

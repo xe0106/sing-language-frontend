@@ -130,13 +130,6 @@ class RegisterViewModel @Inject constructor(
         // 선택한 이미지의 안드로이드 로컬 URI
         val profileImageUri = uiState.profileImageUri
 
-        if(profileImageUri.isNullOrBlank()) {
-            uiState=uiState.copy(
-                errorMessage = "프로필 이미지를 선택해 주세요."
-            )
-            return
-        }
-
         viewModelScope.launch{
             uiState=uiState.copy(
                 isLoading = true,

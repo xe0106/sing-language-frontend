@@ -35,9 +35,11 @@ const val RESULT_QUIZ_COMPLETED = "result_quiz_completed"
  */
 fun NavHostController.navigateToTab(route: String) {
     navigate(route) {
-        popUpTo(Route.HOME.route) { inclusive = false }
+        popUpTo(Route.HOME.route) {
+            saveState = true
+        }
         launchSingleTop = true
-        restoreState = false
+        restoreState = true
     }
 }
 
@@ -174,7 +176,8 @@ fun MainNavHost(
                 CallScreen(
                     onSettingsClick = { navController.navigate(Route.SETTINGS.route) },
                     onContactClick = { contact ->
-                        navController.navigate(Route.VIDEO_CALL.createRoute(contact.targetUserId))
+                        // TODO: 발신 API 응답의 UUID callId로 교체
+                        navController.navigate(Route.VIDEO_CALL.createRoute(contact.name))
                     }
                 )
             }
@@ -182,7 +185,6 @@ fun MainNavHost(
             composable(Route.CALL_RECEIVE.route) { backStackEntry ->
                 val callId = backStackEntry.arguments
                     ?.getString("callId")
-                    ?.toLongOrNull()
 
                 if (callId != null) {
                     CallReceiveScreen(
@@ -205,7 +207,6 @@ fun MainNavHost(
             composable(Route.VIDEO_CALL.route) { backStackEntry ->
                 val callId = backStackEntry.arguments
                     ?.getString("callId")
-                    ?.toLongOrNull()
 
                 if (callId != null) {
                     VideoCallScreen(

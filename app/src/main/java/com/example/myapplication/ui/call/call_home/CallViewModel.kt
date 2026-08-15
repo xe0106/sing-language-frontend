@@ -71,4 +71,24 @@ class CallViewModel @Inject constructor(
             }
         }
     }
+
+    fun deleteContact(contact: Contact) {
+        viewModelScope.launch {
+            runCatching {
+                callRepository.deleteContact(
+                    targetUserId = contact.targetUserId
+                )
+            }.onSuccess {
+                uiState = uiState.copy(
+                    contacts = uiState.contacts.filterNot {
+                        it.contactId == contact.contactId
+                    }
+                )
+            }.onFailure {
+                uiState = uiState.copy(
+                    errorMessage = "연락처를 삭제하지 못했습니다."
+                )
+            }
+        }
+    }
 }

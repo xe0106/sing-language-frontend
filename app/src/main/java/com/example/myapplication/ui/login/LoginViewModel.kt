@@ -33,6 +33,8 @@ class LoginViewModel @Inject constructor(
     }
 
     fun login(){
+        if (uiState.isLoading) return
+
         viewModelScope.launch{
             uiState=uiState.copy(
                 isLoading = true,

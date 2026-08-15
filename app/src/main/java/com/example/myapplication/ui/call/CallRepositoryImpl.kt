@@ -19,8 +19,8 @@ class CallRepositoryImpl @Inject constructor(
 ) : CallRepository{
     private var contacts: List<Contact> = emptyList()
 
-    private val incomingCalls = mutableMapOf<Long, IncomingCall>()
-    private val videoCallSessions = mutableMapOf<Long, VideoCallSession>()
+    private val incomingCalls = mutableMapOf<String, IncomingCall>()
+    private val videoCallSessions = mutableMapOf<String, VideoCallSession>()
     private val messageId = AtomicLong(0L)
 
     override suspend fun getContacts(): List<Contact> {
@@ -48,7 +48,7 @@ class CallRepositoryImpl @Inject constructor(
     override suspend fun addContact(contact: DeviceContact) {
         val response = callApiService.insertContact(
             request = ContactInsertRequest(
-                phoneNumber = contact.phoneNumber,
+                phoneNumber = normalizePhoneNumber(contact.phoneNumber),
                 contactName = contact.name,
                 profileImageUrl = null
             )
@@ -66,7 +66,24 @@ class CallRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getIncomingCall(callId: Long): IncomingCall {
+    override suspend fun deleteContact(targetUserId: Long) {
+        val response = callApiService.deleteContact(
+            targetUserId = targetUserId
+        )
+
+        val body = response.body()
+
+        if(
+            !response.isSuccessful ||
+            body?.isSuccess != true
+        ) {
+            throw IllegalStateException(
+                body?.message ?: "연락처 삭제에 실패했습니다."
+            )
+        }
+    }
+
+    override suspend fun getIncomingCall(callId: String): IncomingCall {
         delay(MOCK_REQUEST_DELAY)
 
         return incomingCalls.getOrPut(callId) {
@@ -78,7 +95,7 @@ class CallRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun acceptCall(callId: Long) {
+    override suspend fun acceptCall(callId: String) {
         delay(MOCK_REQUEST_DELAY)
 
         val incomingCall = incomingCalls[callId] ?: getIncomingCall(callId)
@@ -89,26 +106,24 @@ class CallRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun rejectCall(callId: Long) {
+    override suspend fun rejectCall(callId: String) {
         delay(MOCK_REQUEST_DELAY)
         incomingCalls.remove(callId)
     }
 
-    override suspend fun getVideoCallSession(callId: Long): VideoCallSession {
+    override suspend fun getVideoCallSession(callId: String): VideoCallSession {
         delay(MOCK_REQUEST_DELAY)
 
         return videoCallSessions.getOrPut(callId) {
-            val contact = contacts.firstOrNull { it.contactId == callId }
-
             VideoCallSession(
                 callId = callId,
-                remoteName = contact?.name ?: "상대방",
+                remoteName = "상대방",
                 isOutgoing = true
             )
         }
     }
 
-    override suspend fun connectVideoCall(callId: Long) {
+    override suspend fun connectVideoCall(callId: String) {
         check(videoCallSessions.containsKey(callId)) {
             "존재하지 않는 통화입니다."
         }
@@ -116,7 +131,7 @@ class CallRepositoryImpl @Inject constructor(
     }
 
     override suspend fun sendCallMessage(
-        callId: Long,
+        callId: String,
         text: String
     ): CallMessage {
         check(videoCallSessions.containsKey(callId)) {
@@ -135,7 +150,7 @@ class CallRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun endVideoCall(callId: Long) {
+    override suspend fun endVideoCall(callId: String) {
         delay(MOCK_REQUEST_DELAY)
         videoCallSessions.remove(callId)
         incomingCalls.remove(callId)
@@ -155,4 +170,16 @@ private fun ContactResponse.toContact(): Contact {
         name = contactName,
         profileImageUrl = profileImageUrl
     )
+}
+
+private fun normalizePhoneNumber(
+    phoneNumber: String
+): String {
+    val digits = phoneNumber.filter(Char::isDigit)
+
+    return if (digits.startsWith("82")) {
+        "0${digits.removePrefix("82")}"
+    } else {
+        digits
+    }
 }

@@ -2,6 +2,7 @@ package com.example.myapplication.network
 
 import android.content.Context
 import android.net.Uri
+import androidx.annotation.DrawableRes
 import dagger.hilt.android.qualifiers.ApplicationContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -11,7 +12,7 @@ import javax.inject.Singleton
 
 @Singleton
 class ImagePartFactory @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
     fun create(
         imageUri: String
@@ -40,8 +41,29 @@ class ImagePartFactory @Inject constructor(
         )
     }
 
+    fun createFromResource(
+        @DrawableRes imageResourceId: Int
+    ): MultipartBody.Part {
+        val imageBytes = context.resources
+            .openRawResource(imageResourceId)
+            .use { inputStream ->
+                inputStream.readBytes()
+            }
+
+        val requestBody = imageBytes.toRequestBody(
+            "image/png".toMediaType()
+        )
+
+        return MultipartBody.Part.createFormData(
+            name = FILE_PART_NAME,
+            filename = DEFAULT_PROFILE_FILE_NAME,
+            body = requestBody
+        )
+    }
+
     private companion object{
         const val FILE_PART_NAME = "file"
         const val DEFAULT_FILE_NAME = "profile.jpg"
+        const val DEFAULT_PROFILE_FILE_NAME = "default_profile.png"
     }
 }

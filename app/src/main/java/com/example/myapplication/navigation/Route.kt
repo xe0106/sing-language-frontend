@@ -26,11 +26,16 @@ enum class Route(val route: String) {
     SETTINGS("settings"),
     PROFILE_EDIT("profile_edit");
 
-    /** 인자가 있는 화면으로 이동할 때 사용 */
+    /** Long 식별자를 사용하는 상세 화면으로 이동할 때 사용 */
     fun createRoute(id: Long): String = when (this) {
         LECTURE_DETAIL -> "lecture_detail/$id"
-        CALL_RECEIVE -> "call_receive/$id"
-        VIDEO_CALL -> "video_call/$id"
+        else -> route
+    }
+
+    /** UUID 문자열을 사용하는 통화 화면으로 이동할 때 사용 */
+    fun createRoute(callId: String): String = when (this) {
+        CALL_RECEIVE -> "call_receive/$callId"
+        VIDEO_CALL -> "video_call/$callId"
         else -> route
     }
 }

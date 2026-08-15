@@ -17,7 +17,7 @@ class CallReceiveViewModel @Inject constructor(
     var uiState by mutableStateOf(CallReceiveUiState())
         private set
 
-    fun loadIncomingCall(callId: Long){
+    fun loadIncomingCall(callId: String){
         viewModelScope.launch {
             uiState=uiState.copy(
                 isLoading = true,

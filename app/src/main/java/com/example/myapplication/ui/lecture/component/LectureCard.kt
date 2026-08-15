@@ -31,7 +31,7 @@ fun LectureCard(
     Box(
         modifier=modifier
             .width(353.dp)
-            .height(120.dp)
+            .height(150.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(KuitTheme.colors.white)
             .clickable{onClick()}
@@ -44,7 +44,7 @@ fun LectureCard(
                 model = lecture.thumbnailUrl,
                 contentDescription = "${lecture.title} 썸네일",
                 modifier = Modifier
-                    .size(76.dp)
+                    .size(100.dp)
                     .clip(RoundedCornerShape(12.dp)),
                 contentScale = ContentScale.Crop
             )
@@ -55,7 +55,7 @@ fun LectureCard(
                 lecture = lecture
             )
 
-            Spacer(modifier=Modifier.width(49.dp))
+            Spacer(modifier=Modifier.weight(1f))
 
             Image(
                 painter= painterResource(id=R.drawable.lecture_play_button),

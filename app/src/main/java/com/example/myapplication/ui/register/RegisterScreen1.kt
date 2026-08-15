@@ -71,7 +71,16 @@ fun RegisterScreen1(
 
     Scaffold(
         snackbarHost={
-            SnackbarHost(hostState = snackbarHostState)
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier
+                    .navigationBarsPadding()
+                    .imePadding()
+                    .padding(
+                        horizontal = 16.dp,
+                        vertical = 8.dp
+                    )
+            )
         },
         containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(0)
@@ -131,7 +140,8 @@ private fun RegisterScreen1Content(
                 modifier=Modifier
                     .fillMaxWidth()
                     .height(52.dp)
-                    .padding(horizontal = 20.dp, vertical = 15.dp)
+                    .padding(horizontal = 20.dp),
+                contentAlignment = Alignment.CenterStart
             ){
                 Text(
                     text="회원가입",

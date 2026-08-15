@@ -8,6 +8,7 @@ data class LoginRequest(
 data class LoginResult(
     val userName: String,
     val grantType: String,
+    val userId: Long,
     val accessToken: String,
     val refreshToken: String
 )

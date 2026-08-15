@@ -6,7 +6,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -46,13 +45,12 @@ class MainActivity : ComponentActivity() {
                             BottomNavBar(navController = navController)
                         }
                     }
-                ) { innerPadding ->
-                    // innerPadding 을 적용해야 화면 내용 하단이 바텀바에 가려지지 않는다.
+                ) {
+                    // 떠 있는 바텀바 뒤까지 각 화면의 배경이 이어지도록
+                    // Scaffold의 bottom innerPadding은 NavHost에 적용하지 않는다.
                     MainNavHost(
                         navController = navController,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
             }
