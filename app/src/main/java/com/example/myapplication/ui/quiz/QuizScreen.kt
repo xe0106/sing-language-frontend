@@ -32,7 +32,8 @@ import com.example.myapplication.ui.theme.KuitTheme
 @Composable
 fun QuizScreen(
     onBackClick: () -> Unit = {},
-    viewModel: QuizViewModel = hiltViewModel()
+    viewModel: QuizViewModel = hiltViewModel(),
+    onQuizFinished: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -53,7 +54,9 @@ fun QuizScreen(
                     tint = Color(0xFF000000),
                     modifier = Modifier
                         .size(width = 10.dp, height = 19.dp)
-                        .clickable { onBackClick() }
+                        .clickable {
+                            if (uiState.isFinished) onQuizFinished() else onBackClick()
+                        }
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
@@ -100,6 +103,12 @@ fun QuizScreen(
                         fontSize = 16.sp
                     )
                     Spacer(modifier = Modifier.height(24.dp))
+
+                    // 홈으로 돌아가면서 진도율 갱신을 알린다
+                    QuizButton(text = "홈으로 돌아가기") { onQuizFinished() }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
                     QuizButton(text = "다시 풀기") { viewModel.restart() }
                 }
 

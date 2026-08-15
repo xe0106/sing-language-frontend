@@ -22,11 +22,26 @@ class HomeViewModel @Inject constructor(
         loadHome()
     }
 
-    /** 화면 재진입 시 갱신하고 싶으면 화면에서 호출 */
+    /**
+     * 퀴즈 완료 후 진도율을 다시 불러올 때 MainNavHost 에서 호출한다.
+     */
+    fun refresh() {
+        loadHome()
+    }
+
     fun loadHome() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            _uiState.value = homeRepository.getHome()
+
+            runCatching { homeRepository.getHome() }
+                .onSuccess { newState ->
+                    _uiState.value = newState.copy(isLoading = false, errorMessage = null)
+                }
+                .onFailure { e ->
+                    _uiState.update {
+                        it.copy(isLoading = false, errorMessage = e.message ?: "홈 정보를 불러오지 못했습니다.")
+                    }
+                }
         }
     }
 }

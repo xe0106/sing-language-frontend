@@ -6,6 +6,7 @@ import com.example.myapplication.dto.RegisterRequest
 import com.example.myapplication.network.ApiResponse
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Query
@@ -25,4 +26,12 @@ interface AuthApiService {
     suspend fun register(
         @Body request: RegisterRequest
     ): Response<ApiResponse<String>>
+
+    /** 로그아웃 - AuthInterceptor 가 토큰을 자동으로 붙여준다 */
+    @POST("sign/language/auth/signout")
+    suspend fun logout(): Response<ApiResponse<String>>
+
+    /** 회원 탈퇴 */
+    @DELETE("sign/language/auth/signoff")
+    suspend fun withdraw(): Response<ApiResponse<String>>
 }
