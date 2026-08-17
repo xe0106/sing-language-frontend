@@ -56,7 +56,10 @@ data class UpdateCallStatusRequest(
 )
 
 data class UpdateCallStatusResponse(
+    val type: CallSocketMessageType,
     val callId: String,
+    val callerId: Long,
+    val receiverId: Long,
     val status: CallStatus,
     val startedAt: String?,
     val endedAt: String?

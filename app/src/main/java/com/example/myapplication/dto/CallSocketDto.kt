@@ -8,18 +8,23 @@ enum class CallSocketMessageType {
     ANSWER,
     ICE_CANDIDATE,
     SUBTITLE,
-    LEAVE
+    LEAVE,
+    CALL_STATUS_CHANGE
 }
 
 data class CallSocketMessageDto(
     val type: CallSocketMessageType,
     val callId: String,
-    val senderId: Long,
+    val senderId: Long? = null,
     val receiverId: Long? = null,
+    val callerId: Long? = null,
+    val status: CallStatus? = null,
     val data: JsonObject? = null,
     val textContent: String? = null,
     val subtitleId: Long? = null,
-    val createdAt: String? = null
+    val createdAt: String? = null,
+    val startedAt: String? = null,
+    val endedAt: String? = null
 )
 
 data class SdpDataDto(
