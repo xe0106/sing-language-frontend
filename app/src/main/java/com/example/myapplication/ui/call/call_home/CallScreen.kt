@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,7 +42,7 @@ fun CallScreen(
     modifier: Modifier= Modifier,
     viewModel: CallViewModel = hiltViewModel(),
     onSettingsClick:()->Unit,
-    onContactClick:(Contact)->Unit
+    onCallStarted: (String)-> Unit
 ){
     val uiState=viewModel.uiState
 
@@ -51,6 +52,16 @@ fun CallScreen(
         val contactUri = result.data?.data
         if(contactUri !=null){
             viewModel.addContactFromDevice(contactUri)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.event.collect { event ->
+            when (event) {
+                is CallViewModel.CallEvent.NavigateToVideoCall -> {
+                    onCallStarted(event.callId)
+                }
+            }
         }
     }
 
@@ -120,7 +131,7 @@ fun CallScreen(
                     .padding(horizontal = 16.dp)
                     .weight(weight = 1f, fill = false),
                 contacts = uiState.contacts,
-                onContactClick = onContactClick,
+                onContactClick = viewModel::startCall,
                 onDeleteContact = viewModel::deleteContact,
                 onAddContactClick = {
                     val intent = Intent(Intent.ACTION_PICK).apply{

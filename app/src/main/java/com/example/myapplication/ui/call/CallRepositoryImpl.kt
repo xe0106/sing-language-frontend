@@ -1,8 +1,12 @@
 package com.example.myapplication.ui.call
 
 import com.example.myapplication.api.CallApiService
+import com.example.myapplication.dto.CallOutRequest
+import com.example.myapplication.dto.CallStatus
 import com.example.myapplication.dto.ContactInsertRequest
 import com.example.myapplication.dto.ContactResponse
+import com.example.myapplication.dto.UpdateCallStatusRequest
+import com.example.myapplication.network.SessionManager
 import com.example.myapplication.ui.call.call_home.Contact
 import com.example.myapplication.ui.call.call_home.DeviceContact
 import com.example.myapplication.ui.call.call_receive.IncomingCall
@@ -15,13 +19,56 @@ import javax.inject.Singleton
 
 @Singleton
 class CallRepositoryImpl @Inject constructor(
-    private val callApiService: CallApiService
+    private val callApiService: CallApiService,
+    private val sessionManager: SessionManager
 ) : CallRepository{
     private var contacts: List<Contact> = emptyList()
 
     private val incomingCalls = mutableMapOf<String, IncomingCall>()
     private val videoCallSessions = mutableMapOf<String, VideoCallSession>()
     private val messageId = AtomicLong(0L)
+
+    override suspend fun startCall(receiverId: Long): VideoCallSession {
+        val callerId = sessionManager.userId
+            ?: throw IllegalStateException(
+                "로그인 사용자 정보가 없습니다."
+            )
+
+        val response = callApiService.callOut(
+            request = CallOutRequest(
+                callerId = callerId,
+                receiverId = receiverId
+            )
+        )
+
+        val body = response.body()
+        val call = body?.data
+
+        if(
+            !response.isSuccessful ||
+            body?.isSuccess != true ||
+            call == null
+        ) {
+            throw IllegalStateException(
+                body?.message ?: "전화를 발신하지 못했습니다."
+            )
+        }
+
+        val contact = contacts.firstOrNull {
+            it.targetUserId == receiverId
+        }
+
+        val session = VideoCallSession(
+            callId = call.callId,
+            remoteUserId = call.receiverId,
+            remoteName = contact?.name ?: "상대방",
+            isOutgoing = true
+        )
+
+        videoCallSessions[call.callId] = session
+
+        return session
+    }
 
     override suspend fun getContacts(): List<Contact> {
         /*delay(MOCK_REQUEST_DELAY)
@@ -101,13 +148,18 @@ class CallRepositoryImpl @Inject constructor(
         val incomingCall = incomingCalls[callId] ?: getIncomingCall(callId)
         videoCallSessions[callId] = VideoCallSession(
             callId = callId,
+            remoteUserId = null,
             remoteName = incomingCall.callerName,
             isOutgoing = false
         )
     }
 
     override suspend fun rejectCall(callId: String) {
-        delay(MOCK_REQUEST_DELAY)
+        updateCallStatus(
+            callId = callId,
+            status = CallStatus.REJECTED
+        )
+
         incomingCalls.remove(callId)
     }
 
@@ -117,6 +169,7 @@ class CallRepositoryImpl @Inject constructor(
         return videoCallSessions.getOrPut(callId) {
             VideoCallSession(
                 callId = callId,
+                remoteUserId = null,
                 remoteName = "상대방",
                 isOutgoing = true
             )
@@ -150,8 +203,44 @@ class CallRepositoryImpl @Inject constructor(
         )
     }
 
+    override suspend fun getSubtitles(callId: String): List<CallMessage> {
+        val response = callApiService.viewSubtitleList(callId)
+        val body = response.body()
+        val subtitles = body?.data
+
+        if(
+            !response.isSuccessful ||
+            body?.isSuccess !=true ||
+            subtitles == null
+        ) {
+            throw IllegalStateException(
+                body?.message ?: "자막 목록을 불러오지 못했습니다."
+            )
+        }
+
+        val currentUserId = sessionManager.userId
+            ?: throw IllegalStateException(
+                "로그인 사용자 정보가 없습니다."
+            )
+
+        return subtitles
+            .sortedBy { it.createdAt }
+            .map { subtitle ->
+                CallMessage(
+                    id = subtitle.subtitleId,
+                    text = subtitle.textContent,
+                    isMine = subtitle.senderId == currentUserId,
+                    createdAt = subtitle.createdAt
+                )
+            }
+    }
+
     override suspend fun endVideoCall(callId: String) {
-        delay(MOCK_REQUEST_DELAY)
+        updateCallStatus(
+            callId = callId,
+            status = CallStatus.ENDED
+        )
+
         videoCallSessions.remove(callId)
         incomingCalls.remove(callId)
     }
@@ -160,6 +249,28 @@ class CallRepositoryImpl @Inject constructor(
         const val MOCK_REQUEST_DELAY = 300L
         const val MOCK_CONNECTION_DELAY = 2_000L
         const val MOCK_MESSAGE_DELAY = 200L
+    }
+
+    override suspend fun updateCallStatus(callId: String, status: CallStatus) {
+        val response = callApiService.updateCallStatus(
+            callId = callId,
+            request = UpdateCallStatusRequest(
+                status = status
+            )
+        )
+
+        val body = response.body()
+        val updatedCall = body?.data
+
+        if(
+            !response.isSuccessful ||
+            body?.isSuccess != true ||
+            updatedCall == null
+        ) {
+            throw IllegalStateException(
+                body?.message ?: "통화 상태를 변경하지 못했습니다."
+            )
+        }
     }
 }
 

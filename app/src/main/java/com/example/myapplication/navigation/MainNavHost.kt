@@ -175,9 +175,10 @@ fun MainNavHost(
             composable(Route.CALL.route) {
                 CallScreen(
                     onSettingsClick = { navController.navigate(Route.SETTINGS.route) },
-                    onContactClick = { contact ->
-                        // TODO: 발신 API 응답의 UUID callId로 교체
-                        navController.navigate(Route.VIDEO_CALL.createRoute(contact.name))
+                    onCallStarted = { callId ->
+                        navController.navigate(
+                            Route.VIDEO_CALL.createRoute(callId)
+                        )
                     }
                 )
             }

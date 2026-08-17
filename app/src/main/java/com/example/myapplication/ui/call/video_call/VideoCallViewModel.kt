@@ -23,6 +23,8 @@ class VideoCallViewModel @Inject constructor(
         if(loadedCallId == callId) return
         loadedCallId = callId
 
+        loadSubtitles(callId)
+
         viewModelScope.launch{
             uiState=uiState.copy(
                 callId=callId,
@@ -53,6 +55,22 @@ class VideoCallViewModel @Inject constructor(
                 uiState=uiState.copy(
                     connectionState = CallConnectionState.FAILED,
                     errorMessage = "영상 통화에 연결하지 못했습니다."
+                )
+            }
+        }
+    }
+
+    private fun loadSubtitles(callId: String) {
+        viewModelScope.launch {
+            runCatching {
+                callRepository.getSubtitles(callId)
+            }.onSuccess { subtitles ->
+                uiState = uiState.copy(
+                    messages = subtitles
+                )
+            }.onFailure { exception ->
+                uiState = uiState.copy(
+                    errorMessage = exception.message ?: "자막 목록을 불러오지 못했습니다."
                 )
             }
         }

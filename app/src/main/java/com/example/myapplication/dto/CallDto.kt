@@ -44,3 +44,20 @@ data class SubtitleResponse(
     val textContent: String,
     val createdAt: String
 )
+
+enum class CallStatus {
+    CONNECTED,
+    ENDED,
+    REJECTED
+}
+
+data class UpdateCallStatusRequest(
+    val status: CallStatus
+)
+
+data class UpdateCallStatusResponse(
+    val callId: String,
+    val status: CallStatus,
+    val startedAt: String?,
+    val endedAt: String?
+)

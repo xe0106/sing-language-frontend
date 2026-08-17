@@ -8,6 +8,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.ui.call.CallRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -17,8 +20,51 @@ class CallViewModel @Inject constructor(
     private val deviceContactReader: DeviceContactReader
 ): ViewModel(){
 
+    sealed interface CallEvent {
+        data class NavigateToVideoCall(
+            val callId: String
+        ): CallEvent
+    }
+
+    private val _event = MutableSharedFlow<CallEvent>()
+    val event: SharedFlow<CallEvent> = _event.asSharedFlow()
+
     var uiState by mutableStateOf(CallUiState())
         private set
+
+    fun startCall(
+        contact: Contact
+    ) {
+        if(uiState.isCalling) return
+
+        viewModelScope.launch {
+            uiState = uiState.copy(
+                isCalling = true,
+                errorMessage = null
+            )
+
+            runCatching {
+                callRepository.startCall(
+                    receiverId = contact.targetUserId
+                )
+            }.onSuccess { session ->
+                uiState = uiState.copy(
+                    isCalling = false
+                )
+
+                _event.emit(
+                    CallEvent.NavigateToVideoCall(
+                        callId = session.callId
+                    )
+                )
+            }.onFailure { exception ->
+                uiState = uiState.copy(
+                    isCalling = false,
+                    errorMessage = exception.message ?: "전화를 발신하지 못했습니다."
+                )
+            }
+        }
+    }
 
     init {
         loadContacts()
