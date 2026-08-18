@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -53,9 +54,28 @@ fun LectureScreen(
         ){
             Spacer(modifier=Modifier.height(55.dp))
 
-            TopBar(title = "수어 강의")
+            TopBar(
+                title = "수어 강의",
+                onSearchClick = viewModel::toggleSearch
+            )
 
             Spacer(modifier=Modifier.height(8.dp))
+
+            if (uiState.isSearchVisible) {
+                OutlinedTextField(
+                    value = uiState.searchQuery,
+                    onValueChange = viewModel::onSearchQueryChange,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    placeholder = {
+                        Text(text = "강의 제목을 검색하세요")
+                    },
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             GenreBox(
                 categories = uiState.categories,
@@ -114,6 +134,18 @@ fun LectureScreen(
                         }
                     }
 
+                    uiState.filteredLectures.isEmpty() -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "검색 결과가 없습니다.",
+                                color = KuitTheme.colors.black
+                            )
+                        }
+                    }
+
                     else -> {
                         LazyColumn(
                             modifier = Modifier
@@ -123,7 +155,7 @@ fun LectureScreen(
                             verticalArrangement = Arrangement.spacedBy(16.dp),
                             contentPadding = PaddingValues(bottom = 120.dp)
                         ) {
-                            items(uiState.lectures) { lecture ->
+                            items(uiState.filteredLectures) { lecture ->
                                 LectureCard(
                                     lecture = lecture,
                                     onClick = {

@@ -76,6 +76,21 @@ class LectureViewModel @Inject constructor(
         )
     }
 
+    fun toggleSearch() {
+        uiState = if (uiState.isSearchVisible) {
+            uiState.copy(
+                searchQuery = "",
+                isSearchVisible = false
+            )
+        } else {
+            uiState.copy(isSearchVisible = true)
+        }
+    }
+
+    fun onSearchQueryChange(query: String) {
+        uiState = uiState.copy(searchQuery = query)
+    }
+
     fun clearErrorMessage(){
         uiState=uiState.copy(errorMessage = null)
     }

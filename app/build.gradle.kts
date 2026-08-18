@@ -62,4 +62,7 @@ dependencies {
     implementation(libs.retrofit)                       // retrofit 서버 통신
     implementation(libs.retrofit.converter.gson)        // JSON <-> 객체 변환
     implementation(libs.okhttp.logging.interceptor)     // 통신 로그 확인용
+
+    implementation(libs.okhttp)
+    implementation(libs.stream.webrtc.android)
 }

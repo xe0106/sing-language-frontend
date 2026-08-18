@@ -4,5 +4,10 @@ interface LoginRepository {
     suspend fun login(
         email: String,
         password: String
-    ): Boolean
+    ): LoginOutcome
 }
+
+data class LoginOutcome(
+    val isSuccess: Boolean,
+    val message: String
+)

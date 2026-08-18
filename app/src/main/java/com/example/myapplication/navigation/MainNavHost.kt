@@ -9,6 +9,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import com.example.myapplication.ui.call.IncomingCallViewModel
 import com.example.myapplication.ui.call.call_home.CallScreen
 import com.example.myapplication.ui.call.call_receive.CallReceiveScreen
 import com.example.myapplication.ui.call.video_call.VideoCallScreen
@@ -48,6 +49,37 @@ fun MainNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
+    val incomingCallViewModel: IncomingCallViewModel =
+        hiltViewModel()
+
+    LaunchedEffect(
+        navController,
+        incomingCallViewModel
+    ) {
+        incomingCallViewModel.incomingCalls.collect { incomingCall ->
+            val currentRoute =
+                navController.currentDestination?.route
+
+            if (
+                currentRoute == Route.LOGIN.route ||
+                currentRoute == Route.REGISTER1.route ||
+                currentRoute == Route.REGISTER2.route ||
+                currentRoute == Route.CALL_RECEIVE.route ||
+                currentRoute == Route.VIDEO_CALL.route
+            ) {
+                return@collect
+            }
+
+            navController.navigate(
+                Route.CALL_RECEIVE.createRoute(
+                    incomingCall.callId
+                )
+            ) {
+                launchSingleTop = true
+            }
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = Route.AUTH_GRAPH.route,
@@ -62,6 +94,8 @@ fun MainNavHost(
             composable(Route.LOGIN.route) {
                 LoginScreen(
                     onLoginSuccess = {
+                        incomingCallViewModel.startListening()
+
                         navController.navigate(Route.MAIN_GRAPH.route) {
                             popUpTo(Route.AUTH_GRAPH.route) { inclusive = true }
                             launchSingleTop = true
@@ -175,9 +209,10 @@ fun MainNavHost(
             composable(Route.CALL.route) {
                 CallScreen(
                     onSettingsClick = { navController.navigate(Route.SETTINGS.route) },
-                    onContactClick = { contact ->
-                        // TODO: 발신 API 응답의 UUID callId로 교체
-                        navController.navigate(Route.VIDEO_CALL.createRoute(contact.name))
+                    onCallStarted = { callId ->
+                        navController.navigate(
+                            Route.VIDEO_CALL.createRoute(callId)
+                        )
                     }
                 )
             }
@@ -225,6 +260,8 @@ fun MainNavHost(
                 MyPageScreen(
                     onSettingsClick = { navController.navigate(Route.SETTINGS.route) },
                     onLoggedOut = {
+                        incomingCallViewModel.stopListening()
+
                         navController.navigate(Route.AUTH_GRAPH.route) {
                             popUpTo(Route.MAIN_GRAPH.route) { inclusive = true }
                             launchSingleTop = true

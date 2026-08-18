@@ -1,6 +1,7 @@
 package com.example.myapplication.di
 
 import com.example.myapplication.network.AuthInterceptor
+import com.google.gson.Gson
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -34,10 +35,19 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(client: OkHttpClient): Retrofit =
+    fun provideRetrofit(
+        client: OkHttpClient,
+        gson: Gson
+    ): Retrofit =
         Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(client)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(
+                GsonConverterFactory.create(gson)
+            )
             .build()
+
+    @Provides
+    @Singleton
+    fun provideGson(): Gson = Gson()
 }

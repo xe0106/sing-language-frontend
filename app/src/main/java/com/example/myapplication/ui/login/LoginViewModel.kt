@@ -6,6 +6,9 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -13,6 +16,16 @@ import javax.inject.Inject
 class LoginViewModel @Inject constructor(
     private val loginRepository: LoginRepository
 ): ViewModel(){
+    sealed interface LoginEvent {
+        data class LoginResult(
+            val isSuccess: Boolean,
+            val message: String
+        ) : LoginEvent
+    }
+
+    private val _event = MutableSharedFlow<LoginEvent>()
+    val event: SharedFlow<LoginEvent> = _event.asSharedFlow()
+
     var uiState by mutableStateOf(LoginUiState())
         private set
 
@@ -37,19 +50,23 @@ class LoginViewModel @Inject constructor(
 
         viewModelScope.launch{
             uiState=uiState.copy(
-                isLoading = true,
-                errorMessage = null
+                isLoading = true
             )
 
-            val isSuccess=loginRepository.login(
+            val outcome = loginRepository.login(
                 email=uiState.email,
                 password = uiState.password
             )
 
             uiState=uiState.copy(
-                isLoading = false,
-                isLoginSuccess = isSuccess,
-                errorMessage = if(isSuccess) null else "로그인에 실패했습니다."
+                isLoading = false
+            )
+
+            _event.emit(
+                LoginEvent.LoginResult(
+                    isSuccess = outcome.isSuccess,
+                    message = outcome.message
+                )
             )
         }
     }

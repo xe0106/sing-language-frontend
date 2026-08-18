@@ -2,11 +2,9 @@ package com.example.myapplication.ui.call.video_call.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -23,9 +21,11 @@ import com.example.myapplication.ui.theme.KuitTheme
 @Composable
 fun CallControlBar(
     isMicEnabled: Boolean,
-    onToggleMic: ()->Unit,
-    onEndCall: ()->Unit,
-    modifier: Modifier =Modifier
+    isCameraReady: Boolean,
+    onToggleMic: () -> Unit,
+    onSwitchCamera: () -> Unit,
+    onEndCall: () -> Unit,
+    modifier: Modifier = Modifier
 ){
     Surface(
         modifier=modifier
@@ -67,15 +67,22 @@ fun CallControlBar(
                 )
             }
 
-            // 아직 동작이 없는 설정 이미지
-            Box(
-                modifier = Modifier.size(29.5.dp),
-                contentAlignment = Alignment.Center
+            IconButton(
+                onClick = onSwitchCamera,
+                enabled = isCameraReady
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.call_setting),
-                    contentDescription = "설정",
-                    tint = KuitTheme.colors.gray1
+                    painter =
+                        painterResource(
+                            R.drawable.call_setting
+                        ),
+                    contentDescription = "카메라 전환",
+                    tint =
+                        if (isCameraReady) {
+                            KuitTheme.colors.black
+                        } else {
+                            KuitTheme.colors.gray1
+                        }
                 )
             }
         }

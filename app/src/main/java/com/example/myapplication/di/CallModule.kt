@@ -1,6 +1,12 @@
 package com.example.myapplication.di
 
 import com.example.myapplication.api.CallApiService
+import com.example.myapplication.network.call.CallSocketDataSource
+import com.example.myapplication.network.call.IncomingCallSocketDataSource
+import com.example.myapplication.network.call.OkHttpCallSocketDataSource
+import com.example.myapplication.network.call.OkHttpIncomingCallSocketDataSource
+import com.example.myapplication.network.call.webrtc.WebRtcClient
+import com.example.myapplication.network.call.webrtc.WebRtcClientImpl
 import com.example.myapplication.ui.call.CallRepository
 import com.example.myapplication.ui.call.CallRepositoryImpl
 import dagger.Binds
@@ -19,6 +25,23 @@ abstract class CallModule{
     abstract fun bindCallRepository(
         callRepositoryImpl: CallRepositoryImpl
     ): CallRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindCallSocketDataSource(
+        okHttpCallSocketDataSource: OkHttpCallSocketDataSource
+    ): CallSocketDataSource
+
+    @Binds
+    @Singleton
+    abstract fun bindIncomingCallSocketDataSource(
+        implementation: OkHttpIncomingCallSocketDataSource
+    ): IncomingCallSocketDataSource
+
+    @Binds
+    abstract fun bindWebRtcClient(
+        implementation: WebRtcClientImpl
+    ): WebRtcClient
 
     companion object {
         @Provides

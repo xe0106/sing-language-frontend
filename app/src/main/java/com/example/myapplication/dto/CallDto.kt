@@ -29,8 +29,12 @@ data class CallOutRequest(
 )
 
 data class CallOutResponse(
+    val type: IncomingCallNotificationType? = null,
     val callId: String,
     val callerId: Long,
+    val callerName: String? = null,
+    val callerNickname: String? = null,
+    val callerProfileImageUrl: String? = null,
     val receiverId: Long,
     val status: String,
     val startedAt: String,
@@ -43,4 +47,24 @@ data class SubtitleResponse(
     val senderId: Long,
     val textContent: String,
     val createdAt: String
+)
+
+enum class CallStatus {
+    CONNECTED,
+    ENDED,
+    REJECTED
+}
+
+data class UpdateCallStatusRequest(
+    val status: CallStatus
+)
+
+data class UpdateCallStatusResponse(
+    val type: CallSocketMessageType,
+    val callId: String,
+    val callerId: Long,
+    val receiverId: Long,
+    val status: CallStatus,
+    val startedAt: String?,
+    val endedAt: String?
 )

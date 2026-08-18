@@ -6,12 +6,15 @@ import com.example.myapplication.dto.ContactInsertRequest
 import com.example.myapplication.dto.ContactInsertResponse
 import com.example.myapplication.dto.ContactResponse
 import com.example.myapplication.dto.SubtitleResponse
+import com.example.myapplication.dto.UpdateCallStatusRequest
+import com.example.myapplication.dto.UpdateCallStatusResponse
 import com.example.myapplication.network.ApiResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 
 interface CallApiService {
@@ -43,4 +46,10 @@ interface CallApiService {
     suspend fun viewSubtitleList(
         @Path("callId") callId: String
     ): Response<ApiResponse<List<SubtitleResponse>>>
+
+    @PUT("sign/language/call/{callId}/status")
+    suspend fun updateCallStatus(
+        @Path("callId") callId: String,
+        @Body request: UpdateCallStatusRequest
+    ): Response<ApiResponse<UpdateCallStatusResponse>>
 }

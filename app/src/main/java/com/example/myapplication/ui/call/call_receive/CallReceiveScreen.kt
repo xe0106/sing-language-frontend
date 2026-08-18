@@ -1,5 +1,8 @@
 package com.example.myapplication.ui.call.call_receive
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,11 +20,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.example.myapplication.R
+import com.example.myapplication.ui.call.callMediaPermissions
+import com.example.myapplication.ui.call.hasCallMediaPermissions
 import com.example.myapplication.ui.theme.KuitTheme
 
 @Composable
@@ -34,6 +40,25 @@ fun CallReceiveScreen(
 ){
     val uiState = viewModel.uiState
     val incomingCall = uiState.incomingCall
+
+    val context = LocalContext.current
+
+    val mediaPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract =
+                ActivityResultContracts
+                    .RequestMultiplePermissions()
+        ) {
+            if (context.hasCallMediaPermissions()) {
+                viewModel.acceptCall()
+            } else {
+                Toast.makeText(
+                    context,
+                    "영상통화를 위해 카메라와 마이크 권한이 필요합니다.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
 
     LaunchedEffect(callId) {
         viewModel.loadIncomingCall(callId)
@@ -107,7 +132,22 @@ fun CallReceiveScreen(
             Spacer(modifier= Modifier.height(277.dp))
 
             CallReceiveButton(
-                onClick = viewModel::acceptCall,
+                onClick = {
+                    if (
+                        uiState.isAccepting ||
+                        uiState.isRejecting
+                    ) {
+                        return@CallReceiveButton
+                    }
+
+                    if (context.hasCallMediaPermissions()) {
+                        viewModel.acceptCall()
+                    } else {
+                        mediaPermissionLauncher.launch(
+                            callMediaPermissions
+                        )
+                    }
+                },
                 buttonName = "수락",
                 icon = R.drawable.call_receive_icon1
             )

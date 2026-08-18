@@ -14,7 +14,10 @@ import com.example.myapplication.R
 import com.example.myapplication.ui.theme.KuitTheme
 
 @Composable
-fun TopBar(title: String) {
+fun TopBar(
+    title: String,
+    onSearchClick: (() -> Unit)? = null
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -28,27 +31,11 @@ fun TopBar(title: String) {
             fontSize = 20.sp,
             color = KuitTheme.colors.black
         )
-        Row {
-            IconButton(onClick = {}) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_menu),
-                    contentDescription = "메뉴",
-                    tint = KuitTheme.colors.black,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            IconButton(onClick = {}) {
+        onSearchClick?.let { onClick ->
+            IconButton(onClick = onClick) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_search),
                     contentDescription = "검색",
-                    tint = KuitTheme.colors.black,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            IconButton(onClick = {}) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_notification),
-                    contentDescription = "알림",
                     tint = KuitTheme.colors.black,
                     modifier = Modifier.size(20.dp)
                 )

@@ -15,5 +15,6 @@ data class VideoCallUiState(
 data class CallMessage(
     val id: Long,
     val text: String,
-    val isMine: Boolean
+    val isMine: Boolean,
+    val createdAt: String? = null
 )
