@@ -1,5 +1,7 @@
 package com.example.myapplication.ui.home
 
+import com.example.myapplication.dto.RecentContactDto
+
 data class HomeUiState(
     /** 서버가 완성해서 주는 날짜 문자열. 예: "08/08 (토)" */
     val currentDate: String = "",
@@ -9,6 +11,8 @@ data class HomeUiState(
     val goalTitle: String = "",
     /** 0f ~ 1f (서버는 0~100 정수로 주므로 Repository 에서 변환) */
     val progress: Float = 0f,
+    /** 최근 연락처 목록 */
+    val recentContacts: List<RecentContactDto> = emptyList(),
     val isLoading: Boolean = true,
     val errorMessage: String? = null
 )
