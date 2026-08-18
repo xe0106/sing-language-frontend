@@ -1,6 +1,7 @@
 package com.example.myapplication.ui.home
 
 import com.example.myapplication.api.HomeApiService
+import com.example.myapplication.dto.RecentContactDto
 import java.io.IOException
 import javax.inject.Inject
 
@@ -47,6 +48,25 @@ class HomeRepositoryImpl @Inject constructor(
                 isLoading = false,
                 errorMessage = "홈 정보를 불러오지 못했습니다."
             )
+        }
+    }
+
+    /**
+     * 최근 연락처는 홈 화면의 보조 정보이므로,
+     * 실패하더라도 화면 전체를 에러로 만들지 않고 빈 리스트를 반환한다.
+     */
+    override suspend fun getRecentContacts(limit: Int): List<RecentContactDto> {
+        return try {
+            val response = homeApiService.getRecentContacts(limit)
+            val body = response.body()
+
+            if (response.isSuccessful && body?.isSuccess == true) {
+                body.data.orEmpty()
+            } else {
+                emptyList()
+            }
+        } catch (exception: Exception) {
+            emptyList()
         }
     }
 }

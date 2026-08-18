@@ -1,6 +1,5 @@
 package com.example.myapplication.ui.mypage
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -28,9 +28,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil3.compose.AsyncImage
 import com.example.myapplication.R
 import com.example.myapplication.ui.theme.KuitTheme
-import java.util.Calendar
 
 @Composable
 fun MyPageScreen(
@@ -53,7 +53,8 @@ fun MyPageScreen(
         }
     }
 
-    val learningDays = uiState.profile?.learningDays ?: 0
+    val profile = uiState.profile
+    val learningDays = profile?.learningDays ?: 0
 
     Column(
         modifier = Modifier
@@ -120,6 +121,7 @@ fun MyPageScreen(
                 .padding(vertical = 24.dp, horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // 프로필 이미지 (서버 URL, 없거나 실패하면 기본 캐릭터)
             Box(
                 modifier = Modifier
                     .size(80.dp)
@@ -127,10 +129,16 @@ fun MyPageScreen(
                     .background(Color(0xFFFFF6E8)),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.character_profile),
-                    contentDescription = "프로필 캐릭터",
-                    modifier = Modifier.size(60.dp)
+                AsyncImage(
+                    model = profile?.profileImageUrl,
+                    contentDescription = "프로필 이미지",
+                    contentScale = ContentScale.Crop,
+                    placeholder = painterResource(id = R.drawable.character_profile),
+                    error = painterResource(id = R.drawable.character_profile),
+                    fallback = painterResource(id = R.drawable.character_profile),
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
                 )
             }
 
@@ -138,9 +146,7 @@ fun MyPageScreen(
 
             // 닉네임이 없으면 이름으로 대체
             Text(
-                text = uiState.profile?.nickname
-                    ?: uiState.profile?.name
-                    ?: "사용자 이름",
+                text = profile?.nickname ?: profile?.name ?: "사용자 이름",
                 color = KuitTheme.colors.black,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -148,7 +154,7 @@ fun MyPageScreen(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = uiState.profile?.email ?: "-",
+                text = profile?.email ?: "-",
                 color = Color(0xFFA3A3A3),
                 fontSize = 12.sp,
                 letterSpacing = (-0.24).sp
@@ -185,54 +191,21 @@ fun MyPageScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // 요일 + 출석 도장
-                // TODO: 서버가 요일별 출석 기록을 내려주면 그 데이터로 교체.
-                //       현재는 learningDays 만 오므로 오늘부터 거꾸로 채운다.
-                val days = listOf("월", "화", "수", "목", "금", "토", "일")
-
-                // Calendar 의 DAY_OF_WEEK: 일=1 ... 토=7 → 월=0 ... 일=6 으로 변환
-                // remember 로 감싸 리컴포지션마다 재계산되지 않게 한다
-                val todayIndex = remember {
-                    val dayOfWeek = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
-                    (dayOfWeek + 5) % 7
-                }
-
-                val attendance = remember(learningDays, todayIndex) {
-                    List(7) { index ->
-                        val daysAgo = todayIndex - index
-                        daysAgo in 0 until learningDays
-                    }
-                }
+                // 요일 + 출석 도장 (서버 weeklyAttendance 사용)
+                val attendanceList = profile?.weeklyAttendance.orEmpty()
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    days.zip(attendance).forEach { (day, attended) ->
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = day,
-                                color = if (attended) Color(0xFFFFB1B1)
-                                else Color(0xFFDDDDDD),
-                                fontSize = 10.sp
+                    if (attendanceList.isEmpty()) {
+                        // 데이터가 아직 없을 때는 빈 도장으로 자리만 유지
+                        listOf("월", "화", "수", "목", "금", "토", "일").forEach { day ->
+                            AttendanceStamp(dayLabel = day, attended = false)
+                        }
+                    } else {
+                        attendanceList.forEach { item ->
+                            AttendanceStamp(
+                                dayLabel = item.dayOfWeek.toKoreanDay(),
+                                attended = item.attended == true
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Box(
-                                modifier = Modifier
-                                    .size(30.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        if (attended) Color(0xFFFFB1B1)
-                                        else Color(0xFFEEEEEE)
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (attended) {
-                                    Text(
-                                        text = "✓",
-                                        color = Color.White,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
                         }
                     }
                 }
@@ -296,9 +269,51 @@ fun MyPageScreen(
     }
 }
 
+/** 서버의 "MON" 형식을 "월"로 변환 */
+private fun String?.toKoreanDay(): String = when (this) {
+    "MON" -> "월"
+    "TUE" -> "화"
+    "WED" -> "수"
+    "THU" -> "목"
+    "FRI" -> "금"
+    "SAT" -> "토"
+    "SUN" -> "일"
+    else -> "-"
+}
+
+@Composable
+private fun AttendanceStamp(
+    dayLabel: String,
+    attended: Boolean
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = dayLabel,
+            color = if (attended) Color(0xFFFFB1B1) else Color(0xFFDDDDDD),
+            fontSize = 10.sp
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Box(
+            modifier = Modifier
+                .size(30.dp)
+                .clip(CircleShape)
+                .background(if (attended) Color(0xFFFFB1B1) else Color(0xFFEEEEEE)),
+            contentAlignment = Alignment.Center
+        ) {
+            if (attended) {
+                Text(
+                    text = "✓",
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
 /**
  * 예 / 아니오를 묻는 공통 확인 팝업.
- * Material3 AlertDialog 대신 Dialog 를 써서 앱 디자인에 맞춘다.
  */
 @Composable
 private fun ConfirmDialog(
@@ -337,7 +352,6 @@ private fun ConfirmDialog(
             Spacer(modifier = Modifier.height(24.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // 취소
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -355,7 +369,6 @@ private fun ConfirmDialog(
                     )
                 }
 
-                // 확인
                 Box(
                     modifier = Modifier
                         .weight(1f)
