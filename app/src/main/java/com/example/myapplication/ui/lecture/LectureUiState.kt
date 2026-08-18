@@ -10,6 +10,8 @@ data class LectureUiState(
         LectureCategory.BASIC,
 
     val lectures: List<Lecture> = emptyList(),
+    val searchQuery: String = "",
+    val isSearchVisible: Boolean = false,
 
     val pageNumber: Int = 0,
     val pageSize: Int = 50,
@@ -19,4 +21,20 @@ data class LectureUiState(
 
     val isLoading : Boolean=false,
     val errorMessage: String? =null,
-){}
+) {
+    val filteredLectures: List<Lecture>
+        get() {
+            val query = searchQuery.trim()
+
+            return if (query.isEmpty()) {
+                lectures
+            } else {
+                lectures.filter { lecture ->
+                    lecture.title.contains(
+                        other = query,
+                        ignoreCase = true
+                    )
+                }
+            }
+        }
+}

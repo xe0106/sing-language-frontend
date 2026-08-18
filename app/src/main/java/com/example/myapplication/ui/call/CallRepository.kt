@@ -65,6 +65,8 @@ interface CallRepository {
 
     val subtitleMessages: Flow<CallMessage>
 
+
+    val remoteJoinCallIds: Flow<String>
     val remoteLeaveCallIds: Flow<String>
 
     val callStatusChanges: Flow<CallStatusChange>

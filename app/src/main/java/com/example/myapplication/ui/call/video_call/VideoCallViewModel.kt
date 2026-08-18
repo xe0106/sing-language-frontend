@@ -7,10 +7,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.dto.CallStatus
 import com.example.myapplication.network.call.CallSocketConnectionState
+import com.example.myapplication.network.call.webrtc.IceServerConfig
 import com.example.myapplication.network.call.webrtc.WebRtcClient
 import com.example.myapplication.network.call.webrtc.WebRtcEvent
 import com.example.myapplication.ui.call.CallRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -36,7 +41,28 @@ class VideoCallViewModel @Inject constructor(
 
     private var isOutgoingCall: Boolean? = null
 
+    private var hasReceivedConnectedStatus = false
+
+    private var hasRemoteJoined = false
+
     private var hasSentInitialOffer = false
+
+    private val iceServers =
+        listOf(
+            IceServerConfig(
+                urls =
+                    listOf(
+                        "stun:stun.l.google.com:19302"
+                    )
+            )
+        )
+
+    private var isEndingCall = false
+
+    private val cleanupScope =
+        CoroutineScope(
+            SupervisorJob() + Dispatchers.IO
+        )
 
     init {
         viewModelScope.launch {
@@ -118,6 +144,18 @@ class VideoCallViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
+            callRepository.remoteJoinCallIds.collect { joinedCallId ->
+                if (uiState.callId != joinedCallId) {
+                    return@collect
+                }
+
+                hasRemoteJoined = true
+
+                sendInitialOffer(joinedCallId)
+            }
+        }
+
+        viewModelScope.launch {
             callRepository.remoteLeaveCallIds.collect { endedCallId ->
                 if (uiState.callId != endedCallId) {
                     return@collect
@@ -143,6 +181,8 @@ class VideoCallViewModel @Inject constructor(
 
                 when (statusChange.status) {
                     CallStatus.CONNECTED -> {
+                        hasReceivedConnectedStatus = true
+
                         uiState = uiState.copy(
                             connectionState =
                                 CallConnectionState.CONNECTED,
@@ -343,7 +383,13 @@ class VideoCallViewModel @Inject constructor(
     ) {
         if (
             isOutgoingCall != true ||
-            hasSentInitialOffer
+            !hasReceivedConnectedStatus ||
+            !hasRemoteJoined ||
+            hasSentInitialOffer ||
+            uiState.connectionState ==
+            CallConnectionState.ENDED ||
+            uiState.connectionState ==
+            CallConnectionState.FAILED
         ) {
             return
         }
@@ -366,7 +412,13 @@ class VideoCallViewModel @Inject constructor(
 
     fun loadCall(callId: String) {
         if(loadedCallId == callId) return
+
         loadedCallId = callId
+
+        isOutgoingCall = null
+        hasReceivedConnectedStatus = false
+        hasRemoteJoined = false
+        hasSentInitialOffer = false
 
         loadSubtitles(callId)
 
@@ -382,7 +434,6 @@ class VideoCallViewModel @Inject constructor(
 
                 remoteUserId = session.remoteUserId
                 isOutgoingCall = session.isOutgoing
-                hasSentInitialOffer = false
 
                 uiState=uiState.copy(
                     remoteName = session.remoteName,
@@ -395,7 +446,7 @@ class VideoCallViewModel @Inject constructor(
 
                 // 카메라·마이크·PeerConnection 생성
                 webRtcClient.start(
-                    iceServers = emptyList()
+                    iceServers = iceServers
                 )
 
                 // 통화방 STOMP 연결
@@ -403,6 +454,8 @@ class VideoCallViewModel @Inject constructor(
                     callId = session.callId,
                     receiverId = session.remoteUserId
                 )
+
+                sendInitialOffer(session.callId)
 
                 callRepository.connectVideoCall(callId)
 
@@ -500,25 +553,64 @@ class VideoCallViewModel @Inject constructor(
     }
 
     fun toggleMic(){
-        uiState=uiState.copy(
-            isMicEnabled = !uiState.isMicEnabled
+        val enabled = !uiState.isMicEnabled
+
+        webRtcClient.setMicrophoneEnabled(
+            enabled
         )
+
+        uiState=uiState.copy(
+            isMicEnabled = enabled
+        )
+    }
+
+    fun switchCamera() {
+        if (!uiState.isLocalVideoReady) {
+            return
+        }
+
+        webRtcClient.switchCamera()
     }
 
     fun endCall() {
         val callId = uiState.callId ?: return
 
+        if (
+            isEndingCall ||
+            uiState.connectionState ==
+            CallConnectionState.ENDED
+        ) {
+            return
+        }
+
+        isEndingCall = true
+
         viewModelScope.launch{
+            val result =
+                runCatching {
+                    callRepository.endVideoCall(callId)
+                }
+
+            // 종료 API의 성공 여부와 관계없이
+            // 로컬 카메라·마이크는 반드시 정리
             runCatching {
-                callRepository.endVideoCall(callId)
                 webRtcClient.close()
-            }.onSuccess {
-                uiState=uiState.copy(
-                    connectionState = CallConnectionState.ENDED
+            }
+
+            result.onSuccess {
+                uiState = uiState.copy(
+                    connectionState =
+                        CallConnectionState.ENDED
                 )
-            }.onFailure {
-                uiState=uiState.copy(
-                    errorMessage = "통화를 종료하지 못했습니다."
+            }.onFailure { exception ->
+                // 저장소도 finally에서 소켓을 닫으므로
+                // 로컬에서는 통화가 끝난 상태로 처리
+                uiState = uiState.copy(
+                    connectionState =
+                        CallConnectionState.ENDED,
+                    errorMessage =
+                        exception.message
+                            ?: "통화 종료 상태를 서버에 전달하지 못했습니다."
                 )
             }
         }
@@ -526,5 +618,21 @@ class VideoCallViewModel @Inject constructor(
 
     fun clearError(){
         uiState=uiState.copy(errorMessage = null)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+
+        cleanupScope.launch {
+            runCatching {
+                callRepository.disconnectCallSocket()
+            }
+
+            runCatching {
+                webRtcClient.close()
+            }
+        }.invokeOnCompletion {
+            cleanupScope.cancel()
+        }
     }
 }

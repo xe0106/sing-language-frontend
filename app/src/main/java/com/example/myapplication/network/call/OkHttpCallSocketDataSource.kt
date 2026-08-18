@@ -431,8 +431,12 @@ class OkHttpCallSocketDataSource @Inject constructor(
             CallSocketMessageType.OFFER,
             CallSocketMessageType.ANSWER,
             CallSocketMessageType.ICE_CANDIDATE -> {
-                requireNotNull(message.data) {
-                    "${message.type} 메시지에는 data가 필요합니다."
+                require(
+                    message.data != null &&
+                            !message.data.isJsonNull &&
+                            message.data.isJsonObject
+                ) {
+                    "${message.type} 메시지에는 JSON 객체 형태의 data가 필요합니다."
                 }
             }
 

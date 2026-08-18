@@ -10,9 +10,9 @@ internal fun CallSocketMessageDto.toCallSignal(
     gson: Gson
 ): CallSignal? =
     runCatching {
-        val signalData = requireNotNull(data) {
-            "시그널 메시지에 data가 없습니다."
-        }
+        val signalData = data
+            ?.takeIf { !it.isJsonNull && it.isJsonObject }
+            ?: error("시그널 메시지에 JSON 객체 형태의 data가 없습니다.")
 
         val signalSenderId = requireNotNull(senderId) {
             "시그널링 메시지에 senderId가 없습니다."

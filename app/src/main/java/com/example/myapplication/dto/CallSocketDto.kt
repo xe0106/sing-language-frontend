@@ -1,6 +1,6 @@
 package com.example.myapplication.dto
 
-import com.google.gson.JsonObject
+import com.google.gson.JsonElement
 
 enum class CallSocketMessageType {
     JOIN,
@@ -19,7 +19,7 @@ data class CallSocketMessageDto(
     val receiverId: Long? = null,
     val callerId: Long? = null,
     val status: CallStatus? = null,
-    val data: JsonObject? = null,
+    val data: JsonElement? = null,
     val textContent: String? = null,
     val subtitleId: Long? = null,
     val createdAt: String? = null,

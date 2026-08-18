@@ -346,15 +346,19 @@ class CallRepositoryImpl @Inject constructor(
     override val incomingCallEvents:
             Flow<IncomingCall> =
         incomingCallNotifications.map { notification ->
+            val displayName = notification.callerNickname
+                ?.takeIf { it.isNotBlank() }
+                ?: notification.callerName?.takeIf { it.isNotBlank() }
+                ?: "사용자 ${notification.callerId}"
+
             IncomingCall(
                 callId = notification.callId,
-                callerName =
-                    "사용자 ${notification.callerId}",
-                callerProfileImageUrl = null,
+                callerName = displayName,
+                callerProfileImageUrl = notification.callerProfileImageUrl
+                    ?.takeIf { it.isNotBlank() },
                 callerId = notification.callerId
-            ).also { incomingCall ->
-                incomingCalls[incomingCall.callId] =
-                    incomingCall
+            ).also {
+                incomingCalls[it.callId] = it
             }
         }
 
@@ -420,6 +424,22 @@ class CallRepositoryImpl @Inject constructor(
                 isMine = message.senderId == currentUserId,
                 createdAt = message.createdAt
             )
+        }
+
+    override val remoteJoinCallIds: Flow<String> =
+        callSocketDataSource.messages.mapNotNull { message ->
+            val currentUserId =
+                sessionManager.userId
+                    ?: return@mapNotNull null
+
+            if (
+                message.type == CallSocketMessageType.JOIN &&
+                message.senderId != currentUserId
+            ) {
+                message.callId
+            } else {
+                null
+            }
         }
 
     override val remoteLeaveCallIds: Flow<String> =

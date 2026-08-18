@@ -24,11 +24,39 @@ class IncomingCallNotificationParserTest {
                 type = IncomingCallNotificationType.INCOMING_CALL,
                 callId = "call-1234-abcd",
                 callerId = 1L,
+                callerName = "홍길동",
+                callerNickname = "수어왕",
+                callerProfileImageUrl = "https://example.com/profile.jpg",
                 receiverId = 14L,
-                status = "RINGING"
+                status = "RINGING",
+                startedAt = "2026-08-18T14:00:00",
+                endedAt = null
             ),
             result
         )
+    }
+
+    @Test
+    fun `payload without optional caller information is parsed`() {
+        val result = parseIncomingCallNotification(
+            body = """
+                {
+                  "type": "INCOMING_CALL",
+                  "callId": "call-legacy",
+                  "callerId": 1,
+                  "receiverId": 14,
+                  "status": "RINGING"
+                }
+            """.trimIndent(),
+            expectedReceiverId = 14L,
+            gson = gson
+        )
+
+        assertEquals(null, result.callerName)
+        assertEquals(null, result.callerNickname)
+        assertEquals(null, result.callerProfileImageUrl)
+        assertEquals(null, result.startedAt)
+        assertEquals(null, result.endedAt)
     }
 
     @Test
@@ -94,9 +122,13 @@ class IncomingCallNotificationParserTest {
           "type": "INCOMING_CALL",
           "callId": "$callId",
           "callerId": $callerId,
+          "callerName": "홍길동",
+          "callerNickname": "수어왕",
+          "callerProfileImageUrl": "https://example.com/profile.jpg",
           "receiverId": $receiverId,
           "status": "$status",
-          "createdAt": "2026-08-17T18:00:00+09:00"
+          "startedAt": "2026-08-18T14:00:00",
+          "endedAt": null
         }
         """.trimIndent()
 }

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -113,16 +114,15 @@ fun CallScreen(
         )
 
         Column(
-            modifier=Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .padding(16.dp),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ){
-            Spacer(modifier= Modifier.height(50.dp))
-
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -135,7 +135,7 @@ fun CallScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "연속학습 12",
+                        text = "연속학습 ${uiState.learningDays}",
                         color = KuitTheme.colors.black,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold
@@ -161,11 +161,10 @@ fun CallScreen(
                 }
             }
 
-            Spacer(modifier= Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             ContactBox(
                 modifier = Modifier
-                    .padding(horizontal = 16.dp)
                     .weight(weight = 1f, fill = false),
                 contacts = uiState.contacts,
                 onContactClick = { contact ->

@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.ui.call.CallRepository
+import com.example.myapplication.ui.mypage.ProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -17,7 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class CallViewModel @Inject constructor(
     private val callRepository: CallRepository,
-    private val deviceContactReader: DeviceContactReader
+    private val deviceContactReader: DeviceContactReader,
+    private val profileRepository: ProfileRepository
 ): ViewModel(){
 
     sealed interface CallEvent {
@@ -68,6 +70,19 @@ class CallViewModel @Inject constructor(
 
     init {
         loadContacts()
+        loadLearningDays()
+    }
+
+    private fun loadLearningDays() {
+        viewModelScope.launch {
+            runCatching {
+                profileRepository.getProfile()?.learningDays ?: 0
+            }.onSuccess { learningDays ->
+                uiState = uiState.copy(
+                    learningDays = learningDays
+                )
+            }
+        }
     }
 
     fun loadContacts(){

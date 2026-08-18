@@ -40,15 +40,18 @@ fun HomeScreen(
             .fillMaxSize()
             .background(KuitTheme.colors.main2)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 16.dp),
+            .padding(vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        Spacer(modifier=Modifier.height(27.dp))
+
         TopBar(title = "홈")
 
         // 상단 인사말 카드
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(horizontal = 16.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(KuitTheme.colors.white)
                 .padding(horizontal = 8.dp, vertical = 16.dp)
@@ -100,7 +103,9 @@ fun HomeScreen(
 
         // 메뉴 버튼 3개
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             listOf(
@@ -137,6 +142,7 @@ fun HomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(horizontal = 16.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(Color(0xFFFFFFFF).copy(alpha = 0.3f))
                 .padding(vertical = 16.dp)
