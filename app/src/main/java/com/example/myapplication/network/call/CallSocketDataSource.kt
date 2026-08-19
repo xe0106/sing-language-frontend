@@ -1,6 +1,7 @@
 package com.example.myapplication.network.call
 
 import com.example.myapplication.dto.CallSocketMessageDto
+import com.example.myapplication.dto.LandmarkFramePayload
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -13,6 +14,10 @@ interface CallSocketDataSource {
 
     suspend fun send(message: CallSocketMessageDto)
 
-    suspend fun disconnect()
+    suspend fun sendLandmarkFrame(
+        payload: LandmarkFramePayload
+    )
+
+    suspend fun disconnect(expectedCallId: String? = null)
 
 }

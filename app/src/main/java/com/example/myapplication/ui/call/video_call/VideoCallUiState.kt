@@ -16,5 +16,6 @@ data class CallMessage(
     val id: Long,
     val text: String,
     val isMine: Boolean,
-    val createdAt: String? = null
+    val createdAt: String? = null,
+    val sessionId: String? = null
 )

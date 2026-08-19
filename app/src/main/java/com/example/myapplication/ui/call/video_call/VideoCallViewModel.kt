@@ -1,5 +1,6 @@
 package com.example.myapplication.ui.call.video_call
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -11,6 +12,10 @@ import com.example.myapplication.network.call.webrtc.IceServerConfig
 import com.example.myapplication.network.call.webrtc.WebRtcClient
 import com.example.myapplication.network.call.webrtc.WebRtcEvent
 import com.example.myapplication.ui.call.CallRepository
+import com.example.myapplication.ui.call.video_call.sign.SignFeatureFrame
+import com.example.myapplication.ui.call.video_call.sign.SignUtteranceController
+import com.example.myapplication.ui.call.video_call.sign.SignUtteranceFrame
+import com.example.myapplication.ui.call.video_call.sign.SignUtterancePhase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +52,11 @@ class VideoCallViewModel @Inject constructor(
 
     private var hasSentInitialOffer = false
 
+    private val signUtteranceController =
+        SignUtteranceController()
+
+    private var signSessionDiagnostics: SignSessionDiagnostics? = null
+
     private val iceServers =
         listOf(
             IceServerConfig(
@@ -82,6 +92,12 @@ class VideoCallViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
+            webRtcClient.localSignFeatures.collect { featureFrame ->
+                processSignFeatureFrame(featureFrame)
+            }
+        }
+
+        viewModelScope.launch {
             webRtcClient.events.collect { event ->
                 when (event) {
                     is WebRtcEvent.LocalIceCandidate -> {
@@ -111,7 +127,9 @@ class VideoCallViewModel @Inject constructor(
                             uiState.connectionState !=
                             CallConnectionState.ENDED
                         ) {
-                            callRepository.disconnectCallSocket()
+                            uiState.callId?.let { callId ->
+                                callRepository.disconnectCallSocket(callId)
+                            }
                             webRtcClient.close()
 
                             uiState = uiState.copy(
@@ -135,10 +153,33 @@ class VideoCallViewModel @Inject constructor(
 
         viewModelScope.launch {
             callRepository.subtitleMessages.collect { subtitle ->
+                Log.d(
+                    LOG_TAG,
+                    "Sign subtitle RECEIVE sessionId=${subtitle.sessionId}, " +
+                        "text=${subtitle.text}, isMine=${subtitle.isMine}"
+                )
+
                 if (uiState.messages.none {it.id == subtitle.id}) {
                     uiState = uiState.copy(
                         messages = uiState.messages + subtitle
                     )
+                }
+
+                if (subtitle.isMine) {
+                    val activeSessionId =
+                        signUtteranceController.activeSessionId
+                    signUtteranceController.onOwnSubtitle(
+                        subtitle.sessionId
+                    )
+                    if (
+                        activeSessionId != null &&
+                        subtitle.sessionId == activeSessionId
+                    ) {
+                        finishSignDiagnostics(
+                            sessionId = activeSessionId,
+                            reason = "SUBTITLE"
+                        )
+                    }
                 }
             }
         }
@@ -212,6 +253,11 @@ class VideoCallViewModel @Inject constructor(
 
         viewModelScope.launch {
             callRepository.callSocketConnectionState.collect { socketState ->
+                if (socketState != CallSocketConnectionState.CONNECTED) {
+                    // 재연결되더라도 이전 AI 세션을 이어서 보내지 않는다.
+                    signUtteranceController.reset()
+                }
+
                 if (
                     socketState != CallSocketConnectionState.FAILED ||
                     uiState.connectionState == CallConnectionState.ENDED
@@ -252,6 +298,147 @@ class VideoCallViewModel @Inject constructor(
 
     private var isFinishingRemoteCall = false
 
+    private suspend fun processSignFeatureFrame(
+        featureFrame: SignFeatureFrame
+    ) {
+        val callId = uiState.callId
+
+        if (
+            callId == null ||
+            callRepository.callSocketConnectionState.value !=
+            CallSocketConnectionState.CONNECTED ||
+            uiState.connectionState != CallConnectionState.CONNECTED
+        ) {
+            signUtteranceController.reset()
+            return
+        }
+
+        val previousPhase = signUtteranceController.phase
+        val previousSessionId =
+            signUtteranceController.activeSessionId
+
+        val outgoingFrames = runCatching {
+            signUtteranceController.onFrame(featureFrame)
+        }.getOrElse { throwable ->
+            Log.e(
+                LOG_TAG,
+                "Invalid sign feature frame",
+                throwable
+            )
+            signUtteranceController.reset()
+            return
+        }
+
+        val currentPhase = signUtteranceController.phase
+        val currentSessionId =
+            signUtteranceController.activeSessionId
+
+        if (
+            previousPhase != SignUtterancePhase.ACTIVE &&
+            currentPhase == SignUtterancePhase.ACTIVE &&
+            currentSessionId != null
+        ) {
+            signSessionDiagnostics = SignSessionDiagnostics(
+                sessionId = currentSessionId
+            )
+            Log.d(
+                LOG_TAG,
+                "Sign utterance START sessionId=$currentSessionId, " +
+                    "bufferedFrames=${outgoingFrames.size}"
+            )
+        }
+
+        for (frame in outgoingFrames) {
+            val result = runCatching {
+                callRepository.sendSignFeatures(
+                    callId = callId,
+                    sessionId = frame.sessionId,
+                    sequence = frame.sequence,
+                    timestampMs = frame.timestampMs,
+                    features = frame.features
+                )
+            }
+
+            if (result.isFailure) {
+                // 같은 sequence를 재전송하지 않고 다음 연결에서 새 발화를 시작한다.
+                signUtteranceController.reset()
+                Log.w(
+                    LOG_TAG,
+                    "Failed to send sign feature frame",
+                    result.exceptionOrNull()
+                )
+                return
+            }
+
+            recordSentSignFrame(frame)
+        }
+
+        if (
+            previousSessionId != null &&
+            currentSessionId == null
+        ) {
+            val reason = when (currentPhase) {
+                SignUtterancePhase.NEUTRAL ->
+                    "NO_HAND_1000_MS"
+                SignUtterancePhase.WAITING_NEUTRAL ->
+                    "MAX_DURATION_5000_MS"
+                else -> "STATE_CHANGE"
+            }
+            finishSignDiagnostics(
+                sessionId = previousSessionId,
+                reason = reason
+            )
+        }
+    }
+
+    private fun recordSentSignFrame(
+        frame: SignUtteranceFrame
+    ) {
+        val diagnostics = signSessionDiagnostics
+            ?.takeIf { it.sessionId == frame.sessionId }
+
+        diagnostics?.record(frame)
+
+        Log.d(
+            LOG_TAG,
+            "Sign frame SEND sessionId=${frame.sessionId}, " +
+                "sequence=${frame.sequence}, " +
+                "pose=${frame.poseDetected}, " +
+                "left=${frame.leftHandDetected}, " +
+                "right=${frame.rightHandDetected}"
+        )
+    }
+
+    private fun finishSignDiagnostics(
+        sessionId: String,
+        reason: String
+    ) {
+        val diagnostics = signSessionDiagnostics
+            ?.takeIf { it.sessionId == sessionId }
+
+        if (diagnostics == null) {
+            Log.d(
+                LOG_TAG,
+                "Sign utterance END sessionId=$sessionId, " +
+                    "reason=$reason, stats=unavailable"
+            )
+            return
+        }
+
+        Log.d(
+            LOG_TAG,
+            "Sign utterance END sessionId=$sessionId, " +
+                "reason=$reason, " +
+                "totalFrames=${diagnostics.totalFrames}, " +
+                "poseFrames=${diagnostics.poseFrames}, " +
+                "leftHandFrames=${diagnostics.leftHandFrames}, " +
+                "rightHandFrames=${diagnostics.rightHandFrames}, " +
+                "bothHandFrames=${diagnostics.bothHandFrames}, " +
+                "noHandFrames=${diagnostics.noHandFrames}"
+        )
+        signSessionDiagnostics = null
+    }
+
     private suspend fun finishRemoteCall(
         callId: String,
         message: String? = null
@@ -266,6 +453,7 @@ class VideoCallViewModel @Inject constructor(
         }
 
         isFinishingRemoteCall = true
+        signUtteranceController.reset()
 
         callRepository.handleRemoteCallEnded(callId)
         webRtcClient.close()
@@ -355,8 +543,12 @@ class VideoCallViewModel @Inject constructor(
     private suspend fun failVideoConnection(
         exception: Throwable
     ) {
+        signUtteranceController.reset()
+
         runCatching {
-            callRepository.disconnectCallSocket()
+            uiState.callId?.let { callId ->
+                callRepository.disconnectCallSocket(callId)
+            }
         }
 
         runCatching {
@@ -413,6 +605,7 @@ class VideoCallViewModel @Inject constructor(
     fun loadCall(callId: String) {
         if(loadedCallId == callId) return
 
+        signUtteranceController.reset()
         loadedCallId = callId
 
         isOutgoingCall = null
@@ -488,7 +681,7 @@ class VideoCallViewModel @Inject constructor(
                         webRtcClient.remoteVideoTrack.value != null
                 )
             }.onFailure { exception ->
-                callRepository.disconnectCallSocket()
+                callRepository.disconnectCallSocket(callId)
                 webRtcClient.close()
 
                 loadedCallId = null
@@ -584,6 +777,7 @@ class VideoCallViewModel @Inject constructor(
         }
 
         isEndingCall = true
+        signUtteranceController.reset()
 
         viewModelScope.launch{
             val result =
@@ -623,9 +817,15 @@ class VideoCallViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
 
+        signUtteranceController.reset()
+
+        val callId = uiState.callId
+
         cleanupScope.launch {
             runCatching {
-                callRepository.disconnectCallSocket()
+                if (callId != null) {
+                    callRepository.disconnectCallSocket(callId)
+                }
             }
 
             runCatching {
@@ -633,6 +833,39 @@ class VideoCallViewModel @Inject constructor(
             }
         }.invokeOnCompletion {
             cleanupScope.cancel()
+        }
+    }
+
+    private companion object {
+        const val LOG_TAG = "VideoCallViewModel"
+    }
+
+    private data class SignSessionDiagnostics(
+        val sessionId: String,
+        var totalFrames: Int = 0,
+        var poseFrames: Int = 0,
+        var leftHandFrames: Int = 0,
+        var rightHandFrames: Int = 0,
+        var bothHandFrames: Int = 0,
+        var noHandFrames: Int = 0
+    ) {
+        fun record(frame: SignUtteranceFrame) {
+            totalFrames += 1
+            if (frame.poseDetected) poseFrames += 1
+            if (frame.leftHandDetected) leftHandFrames += 1
+            if (frame.rightHandDetected) rightHandFrames += 1
+            if (
+                frame.leftHandDetected &&
+                frame.rightHandDetected
+            ) {
+                bothHandFrames += 1
+            }
+            if (
+                !frame.leftHandDetected &&
+                !frame.rightHandDetected
+            ) {
+                noHandFrames += 1
+            }
         }
     }
 }

@@ -74,7 +74,7 @@ fun CallControlBar(
                 Icon(
                     painter =
                         painterResource(
-                            R.drawable.call_setting
+                            R.drawable.camera_switch
                         ),
                     contentDescription = "카메라 전환",
                     tint =

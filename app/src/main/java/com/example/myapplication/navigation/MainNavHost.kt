@@ -1,10 +1,14 @@
 package com.example.myapplication.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -31,10 +35,29 @@ const val RESULT_QUIZ_COMPLETED = "result_quiz_completed"
 
 /**
  * 바텀 네비게이션 탭 이동 전용 함수.
- * popUpTo 가 먼저 실행되어 HOME 위에 쌓인 화면이 제거되고,
- * 그 다음 launchSingleTop 이 중복 push 를 막는다.
+ * HOME 은 저장된 탭 화면을 복원하지 않고 HOME 까지 백스택을 정리한다.
+ * 다른 탭은 각 탭의 저장된 상태를 복원한다.
  */
 fun NavHostController.navigateToTab(route: String) {
+    if (route == Route.HOME.route) {
+        val poppedToHome = popBackStack(
+            route = Route.HOME.route,
+            inclusive = false
+        )
+
+        if (
+            !poppedToHome &&
+            currentDestination?.route != Route.HOME.route
+        ) {
+            navigate(Route.HOME.route) {
+                launchSingleTop = true
+                restoreState = false
+            }
+        }
+
+        return
+    }
+
     navigate(route) {
         popUpTo(Route.HOME.route) {
             saveState = true
@@ -51,6 +74,25 @@ fun MainNavHost(
 ) {
     val incomingCallViewModel: IncomingCallViewModel =
         hiltViewModel()
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(
+        lifecycleOwner,
+        incomingCallViewModel
+    ) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_START) {
+                incomingCallViewModel.ensureListening()
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     LaunchedEffect(
         navController,
@@ -167,9 +209,15 @@ fun MainNavHost(
 
                 HomeScreen(
                     viewModel = homeViewModel,
-                    onLectureClick = { navController.navigate(Route.LECTURE.route) },
-                    onQuizClick = { navController.navigate(Route.QUIZ.route) },
-                    onCallClick = { navController.navigate(Route.CALL.route) }
+                    onLectureClick = {
+                        navController.navigateToTab(Route.LECTURE.route)
+                    },
+                    onQuizClick = {
+                        navController.navigateToTab(Route.QUIZ.route)
+                    },
+                    onCallClick = {
+                        navController.navigateToTab(Route.CALL.route)
+                    }
                 )
             }
 
