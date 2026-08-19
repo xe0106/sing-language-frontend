@@ -27,20 +27,12 @@ data class WeeklyAttendanceDto(
 )
 
 /**
- * 프로필 수정 요청 (PUT /users/{userId})
+ * 회원 정보 일부 수정 요청 (PATCH /sign/language/auth/modify)
  */
 data class ProfileUpdateRequest(
-    val nickname: String? = null,
-    val phoneNumber: String? = null,
     val profileImageUrl: String? = null,
-    val notificationEnabled: Boolean? = null
-)
-
-/** 프로필 수정 응답 DTO */
-data class ProfileUpdateDto(
-    val userId: Long?,
-    val nickname: String?,
-    val phoneNumber: String?,
-    val notificationEnabled: Boolean?,
-    val updatedAt: String?
+    val nickname: String? = null,
+    val gender: String? = null,
+    val birthDate: String? = null,
+    val phoneNumber: String? = null
 )

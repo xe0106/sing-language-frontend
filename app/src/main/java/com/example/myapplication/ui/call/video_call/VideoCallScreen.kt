@@ -3,6 +3,7 @@ package com.example.myapplication.ui.call.video_call
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -126,6 +127,7 @@ fun VideoCallContent(
                     onSendClick = onSendMessage,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
+                        .imePadding()
                         .navigationBarsPadding()
                         .padding(start=16.dp, end=16.dp, bottom=79.dp)
                 )

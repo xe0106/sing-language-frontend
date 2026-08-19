@@ -23,6 +23,7 @@ import com.example.myapplication.ui.lecture.LectureDetailScreen
 import com.example.myapplication.ui.lecture.LectureScreen
 import com.example.myapplication.ui.login.LoginScreen
 import com.example.myapplication.ui.mypage.MyPageScreen
+import com.example.myapplication.ui.mypage.MyPageViewModel
 import com.example.myapplication.ui.mypage.ProfileEditScreen
 import com.example.myapplication.ui.quiz.QuizScreen
 import com.example.myapplication.ui.register.RegisterScreen1
@@ -32,6 +33,9 @@ import com.example.myapplication.ui.settings.SettingsScreen
 
 /** 퀴즈 완료 결과를 홈 화면으로 돌려줄 때 사용하는 키 */
 const val RESULT_QUIZ_COMPLETED = "result_quiz_completed"
+
+/** 프로필 수정 완료 후 마이페이지 데이터를 다시 불러오기 위한 키 */
+const val RESULT_PROFILE_UPDATED = "result_profile_updated"
 
 /**
  * 바텀 네비게이션 탭 이동 전용 함수.
@@ -304,8 +308,22 @@ fun MainNavHost(
                 }
             }
 
-            composable(Route.PROFILE.route) {
+            composable(Route.PROFILE.route) { entry ->
+                val myPageViewModel: MyPageViewModel = hiltViewModel()
+
+                LaunchedEffect(Unit) {
+                    entry.savedStateHandle
+                        .getStateFlow(RESULT_PROFILE_UPDATED, false)
+                        .collect { updated ->
+                            if (updated) {
+                                myPageViewModel.loadProfile()
+                                entry.savedStateHandle[RESULT_PROFILE_UPDATED] = false
+                            }
+                        }
+                }
+
                 MyPageScreen(
+                    viewModel = myPageViewModel,
                     onSettingsClick = { navController.navigate(Route.SETTINGS.route) },
                     onLoggedOut = {
                         incomingCallViewModel.stopListening()
@@ -327,7 +345,15 @@ fun MainNavHost(
 
             composable(Route.PROFILE_EDIT.route) {
                 ProfileEditScreen(
-                    onBackClick = { navController.popBackStack() }
+                    onBackClick = { navController.popBackStack() },
+                    onUpdateSuccess = {
+                        navController.getBackStackEntry(Route.PROFILE.route)
+                            .savedStateHandle[RESULT_PROFILE_UPDATED] = true
+                        navController.popBackStack(
+                            route = Route.PROFILE.route,
+                            inclusive = false
+                        )
+                    }
                 )
             }
         }

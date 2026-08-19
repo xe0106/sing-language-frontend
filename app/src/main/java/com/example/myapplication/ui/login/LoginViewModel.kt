@@ -48,6 +48,28 @@ class LoginViewModel @Inject constructor(
     fun login(){
         if (uiState.isLoading) return
 
+        val validationMessage = when {
+            uiState.email.isBlank() ->
+                "이메일은 필수 입력값입니다."
+
+            uiState.password.isBlank() ->
+                "비밀번호는 필수 입력값입니다."
+
+            else -> null
+        }
+
+        if (validationMessage != null) {
+            viewModelScope.launch {
+                _event.emit(
+                    LoginEvent.LoginResult(
+                        isSuccess = false,
+                        message = validationMessage
+                    )
+                )
+            }
+            return
+        }
+
         viewModelScope.launch{
             uiState=uiState.copy(
                 isLoading = true
