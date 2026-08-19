@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.myapplication.dto.CallSocketMessageDto
 import com.example.myapplication.dto.CallSocketMessageType
 import com.example.myapplication.dto.LandmarkFramePayload
+import com.example.myapplication.dto.SignSessionEndPayload
 import com.example.myapplication.network.SessionManager
 import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
@@ -209,6 +210,35 @@ class OkHttpCallSocketDataSource @Inject constructor(
     override suspend fun sendLandmarkFrame(
         payload: LandmarkFramePayload
     ) {
+        validateLandmarkFrame(payload)
+        sendAiFeaturePayload(
+            callId = payload.callId,
+            senderId = payload.senderId,
+            payload = payload,
+            failureMessage =
+                "수어 특징 프레임을 전송하지 못했습니다."
+        )
+    }
+
+    override suspend fun sendSignSessionEnd(
+        payload: SignSessionEndPayload
+    ) {
+        validateSignSessionEnd(payload)
+        sendAiFeaturePayload(
+            callId = payload.callId,
+            senderId = payload.senderId,
+            payload = payload,
+            failureMessage =
+                "수어 발화 종료 메시지를 전송하지 못했습니다."
+        )
+    }
+
+    private fun sendAiFeaturePayload(
+        callId: String,
+        senderId: Long,
+        payload: Any,
+        failureMessage: String
+    ) {
         val session = synchronized(sessionLock) {
             check(
                 _connectionState.value ==
@@ -222,8 +252,8 @@ class OkHttpCallSocketDataSource @Inject constructor(
             }
         }
 
-        require(payload.callId == session.callId) {
-            "현재 연결된 통화와 특징 프레임의 callId가 다릅니다."
+        require(callId == session.callId) {
+            "현재 연결된 통화와 AI 메시지의 callId가 다릅니다."
         }
 
         val currentUserId = sessionManager.userId
@@ -231,11 +261,9 @@ class OkHttpCallSocketDataSource @Inject constructor(
                 "로그인 사용자 정보가 없습니다."
             )
 
-        require(payload.senderId == currentUserId) {
-            "특징 프레임 송신자 정보가 로그인 사용자와 다릅니다."
+        require(senderId == currentUserId) {
+            "AI 메시지 송신자 정보가 로그인 사용자와 다릅니다."
         }
-
-        validateLandmarkFrame(payload)
 
         val socket = checkNotNull(session.socket) {
             "사용할 수 있는 WebSocket이 없습니다."
@@ -257,7 +285,7 @@ class OkHttpCallSocketDataSource @Inject constructor(
 
         if (!socket.send(StompFrameCodec.encode(sendFrame))) {
             val exception = IllegalStateException(
-                "수어 특징 프레임을 전송하지 못했습니다."
+                failureMessage
             )
 
             failSession(session, socket, exception)
@@ -655,6 +683,26 @@ class OkHttpCallSocketDataSource @Inject constructor(
         }
         require(payload.features.all(Float::isFinite)) {
             "특징 프레임에는 NaN 또는 Infinity를 사용할 수 없습니다."
+        }
+    }
+
+    private fun validateSignSessionEnd(
+        payload: SignSessionEndPayload
+    ) {
+        require(
+            payload.type ==
+                SignSessionEndPayload.TYPE_SESSION_END
+        ) {
+            "발화 종료 type이 올바르지 않습니다."
+        }
+        require(payload.callId.isNotBlank()) {
+            "발화 종료 callId가 비어 있습니다."
+        }
+        require(payload.sessionId.isNotBlank()) {
+            "발화 종료 sessionId가 비어 있습니다."
+        }
+        require(payload.timestampMs >= 0L) {
+            "발화 종료 timestampMs가 올바르지 않습니다."
         }
     }
 

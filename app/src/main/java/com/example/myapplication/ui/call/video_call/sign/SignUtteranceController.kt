@@ -45,33 +45,14 @@ class SignUtteranceController(
         }
     }
 
-    /**
-     * 본인이 생성한 자막 중 현재 발화의 sessionId와 일치하는 경우에만 종료한다.
-     * 늦은 자막 또는 sessionId가 없는 자막은 현재 상태에 영향을 주지 않는다.
-     */
-    fun onOwnSubtitle(sessionId: String?) {
-        val utterance = activeUtterance ?: return
-
-        if (
-            phase != SignUtterancePhase.ACTIVE ||
-            sessionId == null ||
-            sessionId != utterance.sessionId
-        ) {
-            return
-        }
-
-        activeUtterance = null
-        candidateFrames.clear()
-        neutralSinceMs = utterance.noHandSinceMs
-        phase = SignUtterancePhase.WAITING_NEUTRAL
-    }
-
     /** 소켓 재연결 또는 통화 변경 시 진행 중인 발화를 폐기한다. */
-    fun reset() {
+    fun reset(): String? {
+        val discardedSessionId = activeUtterance?.sessionId
         candidateFrames.clear()
         activeUtterance = null
         neutralSinceMs = null
         phase = SignUtterancePhase.NEUTRAL
+        return discardedSessionId
     }
 
     private fun handleCandidateFrame(
