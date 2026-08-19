@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.roundToInt
 
 /**
- * WebRTC 로컬 트랙을 방해하지 않고 최대 15 FPS로 MediaPipe 분석을 수행한다.
+ * WebRTC 로컬 트랙을 방해하지 않고 목표 FPS로 MediaPipe 분석을 수행한다.
  *
  * 분석이 진행 중이면 새 프레임을 즉시 버린다. 따라서 카메라 캡처 스레드에
  * 변환/추론 작업이 쌓이지 않는다.
@@ -316,6 +316,8 @@ internal class WebRtcSignFrameSink(
     )
 
     private companion object {
+        // 서버 권장 전송률에 맞춰 최대 15 FPS로 분석한다. 분석이 진행 중이면
+        // 다음 프레임은 버리므로 카메라 및 추론 작업이 밀리지 않는다.
         const val TARGET_FPS = 15L
         const val FRAME_INTERVAL_NS =
             1_000_000_000L / TARGET_FPS

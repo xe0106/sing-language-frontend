@@ -14,7 +14,7 @@ interface WebRtcClient {
 
     val remoteVideoTrack: StateFlow<VideoTrack?>
 
-    /** 최대 15 FPS로 로컬 카메라에서 추출한 258개 수어 특징. */
+    /** 목표 FPS로 로컬 카메라에서 추출한 258개 수어 특징. */
     val localSignFeatures: Flow<SignFeatureFrame>
 
     val events: Flow<WebRtcEvent>
