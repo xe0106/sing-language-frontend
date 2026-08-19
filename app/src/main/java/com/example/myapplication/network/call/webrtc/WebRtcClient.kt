@@ -2,6 +2,7 @@ package com.example.myapplication.network.call.webrtc
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import com.example.myapplication.ui.call.video_call.sign.SignFeatureFrame
 import org.webrtc.EglBase
 import org.webrtc.VideoTrack
 
@@ -12,6 +13,9 @@ interface WebRtcClient {
     val localVideoTrack: StateFlow<VideoTrack?>
 
     val remoteVideoTrack: StateFlow<VideoTrack?>
+
+    /** 최대 15 FPS로 로컬 카메라에서 추출한 258개 수어 특징. */
+    val localSignFeatures: Flow<SignFeatureFrame>
 
     val events: Flow<WebRtcEvent>
 

@@ -41,7 +41,15 @@ interface CallRepository {
         receiverId: Long?
     )
 
-    suspend fun disconnectCallSocket()
+    suspend fun disconnectCallSocket(callId: String? = null)
+
+    suspend fun sendSignFeatures(
+        callId: String,
+        sessionId: String,
+        sequence: Long,
+        timestampMs: Long,
+        features: FloatArray
+    )
 
     // 개인 수신 전화 알림 소켓
     val incomingCallNotifications:

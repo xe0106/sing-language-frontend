@@ -15,16 +15,35 @@ class AuthInterceptor @Inject constructor(
 ) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
+        val originalRequest = chain.request()
+        val path = originalRequest.url.encodedPath
+
+        if (path in PUBLIC_AUTH_PATHS) {
+            return chain.proceed(
+                originalRequest.newBuilder()
+                    .removeHeader("Authorization")
+                    .build()
+            )
+        }
+
         val token = sessionManager.accessToken
 
         val request = if (token.isNullOrBlank()) {
-            chain.request()
+            originalRequest
         } else {
-            chain.request().newBuilder()
-                .addHeader("Authorization", "Bearer $token")
+            originalRequest.newBuilder()
+                .header("Authorization", "Bearer $token")
                 .build()
         }
 
         return chain.proceed(request)
+    }
+
+    private companion object {
+        val PUBLIC_AUTH_PATHS = setOf(
+            "/sign/language/auth/signin",
+            "/sign/language/auth/signup",
+            "/sign/language/auth/check-nickname"
+        )
     }
 }

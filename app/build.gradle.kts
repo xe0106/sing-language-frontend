@@ -65,4 +65,11 @@ dependencies {
 
     implementation(libs.okhttp)
     implementation(libs.stream.webrtc.android)
+    implementation(libs.mediapipe.tasks.vision) {
+        // MediaPipe 0.10.35의 Android AAR은 full protobuf API로 컴파일되어 있지만
+        // POM에는 javalite가 선언되어 있어 HolisticLandmarker 생성 시
+        // Any.Builder.build() NoSuchMethodError가 발생한다.
+        exclude(group = "com.google.protobuf", module = "protobuf-javalite")
+    }
+    implementation("com.google.protobuf:protobuf-java:4.26.1")
 }

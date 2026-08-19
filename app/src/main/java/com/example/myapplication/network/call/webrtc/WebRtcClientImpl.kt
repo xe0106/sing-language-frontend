@@ -1,7 +1,10 @@
 package com.example.myapplication.network.call.webrtc
 
 import android.content.Context
+import android.util.Log
+import com.example.myapplication.ui.call.video_call.sign.SignFeatureFrame
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -52,6 +55,15 @@ class WebRtcClientImpl @Inject constructor(
 
     override val remoteVideoTrack =
         _remoteVideoTrack.asStateFlow()
+
+    private val _localSignFeatures =
+        MutableSharedFlow<SignFeatureFrame>(
+            extraBufferCapacity = 1,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST
+        )
+
+    override val localSignFeatures =
+        _localSignFeatures.asSharedFlow()
 
     private val _events =
         MutableSharedFlow<WebRtcEvent>(
@@ -190,6 +202,10 @@ class WebRtcClientImpl @Inject constructor(
 
     private var audioTrack: AudioTrack? = null
 
+    private var signFrameSink: WebRtcSignFrameSink? = null
+
+    private var signFeatureLogCount = 0
+
     private var peerConnection: PeerConnection? = null
 
     private val remoteIceMutex = Mutex()
@@ -273,7 +289,47 @@ class WebRtcClientImpl @Inject constructor(
         audioSource = createdAudioSource
         audioTrack = createdAudioTrack
 
+        val createdSignFrameSink =
+            WebRtcSignFrameSink(
+                context = context,
+                onFeatures = { featureFrame ->
+                    _localSignFeatures.tryEmit(featureFrame)
+                    logSignFeatures(featureFrame)
+                },
+                onFailure = { throwable ->
+                    Log.e(TAG, "Sign analysis failed", throwable)
+                    _events.tryEmit(
+                        WebRtcEvent.MediaOperationFailed(
+                            reason =
+                                throwable.message
+                                    ?: "수어 특징을 추출하지 못했습니다."
+                        )
+                    )
+                }
+            )
+
+        createdVideoTrack.addSink(createdSignFrameSink)
+        signFrameSink = createdSignFrameSink
+
         _localVideoTrack.value = createdVideoTrack
+    }
+
+    private fun logSignFeatures(
+        featureFrame: SignFeatureFrame
+    ) {
+        signFeatureLogCount += 1
+        if (signFeatureLogCount % SIGN_LOG_INTERVAL_FRAMES != 1) {
+            return
+        }
+
+        Log.d(
+            TAG,
+            "Sign features size=${featureFrame.features.size}, " +
+                "pose=${featureFrame.poseDetected}, " +
+                "left=${featureFrame.leftHandDetected}, " +
+                "right=${featureFrame.rightHandDetected}, " +
+                "sample=${featureFrame.features.take(8)}"
+        )
     }
 
     private fun IceServerConfig.toWebRtcIceServer():
@@ -571,6 +627,18 @@ class WebRtcClientImpl @Inject constructor(
             _localVideoTrack.value = null
             _remoteVideoTrack.value = null
 
+            val currentSignFrameSink = signFrameSink
+            signFrameSink = null
+
+            if (currentSignFrameSink != null) {
+                runCatching {
+                    localTrack?.removeSink(currentSignFrameSink)
+                }
+                runCatching {
+                    currentSignFrameSink.close()
+                }
+            }
+
             remoteIceMutex.withLock {
                 pendingRemoteIceCandidates.clear()
             }
@@ -640,6 +708,8 @@ class WebRtcClientImpl @Inject constructor(
     }
 
     private companion object {
+        const val TAG = "WebRtcClient"
+        const val SIGN_LOG_INTERVAL_FRAMES = 15
         const val LOCAL_VIDEO_TRACK_ID = "local_video_track"
         const val LOCAL_AUDIO_TRACK_ID = "local_audio_track"
 

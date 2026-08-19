@@ -5,6 +5,7 @@ import com.example.myapplication.api.AuthApiService
 import com.example.myapplication.api.ImageApiService
 import com.example.myapplication.dto.RegisterRequest
 import com.example.myapplication.network.ImagePartFactory
+import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.IOException
@@ -88,7 +89,7 @@ class RegisterRepositoryImpl @Inject constructor(
          gender: String,
          birthDate: String,
          phoneNumber: String
-    ): Boolean {
+    ): RegisterOutcome {
         //return name.isNotBlank()&&email.isNotBlank()&&password.isNotBlank()
 
         return try {
@@ -105,12 +106,82 @@ class RegisterRepositoryImpl @Inject constructor(
                 )
             )
 
-            response.isSuccessful &&
-                    response.body()?.isSuccess ==true
+            val body = response.body()
+
+            if (response.isSuccessful && body?.isSuccess == true) {
+                RegisterOutcome(isSuccess = true)
+            } else {
+                val serverError = response.errorBody()
+                    ?.string()
+                    ?.toServerRegisterErrorOrNull()
+
+                RegisterOutcome(
+                    isSuccess = false,
+                    message = registerErrorMessage(
+                        code = body?.code ?: serverError?.code,
+                        serverMessage = body?.message
+                            ?.takeIf { it.isNotBlank() }
+                            ?: serverError?.message,
+                        httpCode = response.code()
+                    )
+                )
+            }
         } catch (exception: IOException) {
-            false
+            RegisterOutcome(
+                isSuccess = false,
+                message = "네트워크 연결을 확인해 주세요."
+            )
         } catch (exception: Exception) {
-            false
+            RegisterOutcome(
+                isSuccess = false,
+                message = "회원가입 처리 중 오류가 발생했습니다."
+            )
         }
     }
+
+    private fun String.toServerRegisterErrorOrNull(): ServerRegisterError? =
+        runCatching {
+            val json = JsonParser.parseString(this).asJsonObject
+
+            ServerRegisterError(
+                code = json.get("code")
+                    ?.takeUnless { it.isJsonNull }
+                    ?.asString,
+                message = json.get("message")
+                    ?.takeUnless { it.isJsonNull }
+                    ?.asString
+                    ?.takeIf { it.isNotBlank() }
+            )
+        }.getOrNull()
+
+    private fun registerErrorMessage(
+        code: String?,
+        serverMessage: String?,
+        httpCode: Int
+    ): String = when (code) {
+        "MEMBER400_FORMAT" ->
+            serverMessage ?: "필수 입력값을 확인해 주세요."
+
+        "MEMBER409_EMAIL" ->
+            "이미 가입된 이메일입니다."
+
+        "MEMBER409_NICKNAME" ->
+            "이미 사용 중인 닉네임입니다."
+
+        "MEMBER409_PHONE_NUMBER" ->
+            "이미 사용 중인 전화번호입니다."
+
+        else -> when (httpCode) {
+            400 -> "입력한 회원정보를 확인해 주세요."
+            409 -> "이미 사용 중인 회원정보가 있습니다."
+            429 -> "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요."
+            in 500..599 -> "서버에 문제가 발생했습니다. 잠시 후 다시 시도해 주세요."
+            else -> "회원가입에 실패했습니다."
+        }
+    }
+
+    private data class ServerRegisterError(
+        val code: String?,
+        val message: String?
+    )
 }

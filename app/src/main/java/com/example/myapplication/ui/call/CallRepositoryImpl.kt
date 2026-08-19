@@ -8,6 +8,7 @@ import com.example.myapplication.dto.CallStatus
 import com.example.myapplication.dto.ContactInsertRequest
 import com.example.myapplication.dto.ContactResponse
 import com.example.myapplication.dto.IceCandidateDataDto
+import com.example.myapplication.dto.LandmarkFramePayload
 import com.example.myapplication.dto.SdpDataDto
 import com.example.myapplication.dto.UpdateCallStatusRequest
 import com.example.myapplication.network.SessionManager
@@ -274,7 +275,7 @@ class CallRepositoryImpl @Inject constructor(
             videoCallSessions.remove(callId)
             incomingCalls.remove(callId)
         } finally {
-            callSocketDataSource.disconnect()
+            callSocketDataSource.disconnect(callId)
         }
     }
 
@@ -330,13 +331,37 @@ class CallRepositoryImpl @Inject constructor(
                 )
             )
         } catch (throwable: Throwable) {
-            callSocketDataSource.disconnect()
+            callSocketDataSource.disconnect(callId)
             throw throwable
         }
     }
 
-    override suspend fun disconnectCallSocket() {
-        callSocketDataSource.disconnect()
+    override suspend fun disconnectCallSocket(callId: String?) {
+        callSocketDataSource.disconnect(callId)
+    }
+
+    override suspend fun sendSignFeatures(
+        callId: String,
+        sessionId: String,
+        sequence: Long,
+        timestampMs: Long,
+        features: FloatArray
+    ) {
+        val senderId = sessionManager.userId
+            ?: throw IllegalStateException(
+                "로그인 사용자 정보가 없습니다."
+            )
+
+        callSocketDataSource.sendLandmarkFrame(
+            LandmarkFramePayload(
+                sessionId = sessionId,
+                callId = callId,
+                senderId = senderId,
+                sequence = sequence,
+                timestampMs = timestampMs,
+                features = features
+            )
+        )
     }
 
     override val incomingCallNotifications =
@@ -422,7 +447,8 @@ class CallRepositoryImpl @Inject constructor(
                 id = subtitleId,
                 text = textContent,
                 isMine = message.senderId == currentUserId,
-                createdAt = message.createdAt
+                createdAt = message.createdAt,
+                sessionId = message.sessionId
             )
         }
 
@@ -487,7 +513,7 @@ class CallRepositoryImpl @Inject constructor(
 
     override suspend fun handleRemoteCallEnded(callId: String) {
         try {
-            callSocketDataSource.disconnect()
+            callSocketDataSource.disconnect(callId)
         } finally {
             videoCallSessions.remove(callId)
             incomingCalls.remove(callId)

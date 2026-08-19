@@ -4,10 +4,12 @@ import com.example.myapplication.dto.LoginRequest
 import com.example.myapplication.dto.LoginResult
 import com.example.myapplication.dto.RegisterRequest
 import com.example.myapplication.network.ApiResponse
+import com.example.myapplication.ui.mypage.ProfileUpdateRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Query
 
@@ -25,6 +27,12 @@ interface AuthApiService {
     @POST("sign/language/auth/signup")
     suspend fun register(
         @Body request: RegisterRequest
+    ): Response<ApiResponse<String>>
+
+    /** 회원 정보 일부 수정 - AuthInterceptor 가 액세스 토큰을 자동으로 붙여준다 */
+    @PATCH("sign/language/auth/modify")
+    suspend fun modifyProfile(
+        @Body request: ProfileUpdateRequest
     ): Response<ApiResponse<String>>
 
     /** 로그아웃 - AuthInterceptor 가 토큰을 자동으로 붙여준다 */

@@ -15,6 +15,7 @@ enum class CallSocketMessageType {
 data class CallSocketMessageDto(
     val type: CallSocketMessageType,
     val callId: String,
+    val sessionId: String? = null,
     val senderId: Long? = null,
     val receiverId: Long? = null,
     val callerId: Long? = null,

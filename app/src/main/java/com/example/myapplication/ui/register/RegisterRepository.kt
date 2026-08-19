@@ -18,5 +18,10 @@ interface RegisterRepository {
         gender: String,
         birthDate: String,
         phoneNumber: String
-    ): Boolean
+    ): RegisterOutcome
 }
+
+data class RegisterOutcome(
+    val isSuccess: Boolean,
+    val message: String? = null
+)

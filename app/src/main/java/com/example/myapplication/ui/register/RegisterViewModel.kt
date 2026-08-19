@@ -113,6 +113,22 @@ class RegisterViewModel @Inject constructor(
             return
         }
 
+        val validationMessage = when {
+            uiState.email.isBlank() -> "이메일은 필수 입력값입니다."
+            uiState.password.isBlank() -> "비밀번호는 필수 입력값입니다."
+            uiState.name.isBlank() -> "이름은 필수 입력값입니다."
+            uiState.nickname.isBlank() -> "닉네임은 필수 입력값입니다."
+            uiState.birth.isBlank() -> "생년월일을 입력해주세요."
+            uiState.phoneNumber.isBlank() -> "전화번호는 필수 입력값입니다."
+            uiState.passwordConfirm.isBlank() -> "비밀번호 확인을 입력해 주세요."
+            else -> null
+        }
+
+        if (validationMessage != null) {
+            uiState = uiState.copy(errorMessage = validationMessage)
+            return
+        }
+
         if(!uiState.isNicknameSuccess) {
             uiState=uiState.copy(
                 errorMessage = "닉네임 중복 확인을 해주세요."
@@ -155,7 +171,7 @@ class RegisterViewModel @Inject constructor(
                 profileImageUrl = profileImageUrl
             )
 
-            val isSuccess=registerRepository.register(
+            val outcome=registerRepository.register(
                 email = uiState.email.trim(),
                 password = uiState.password,
                 name = uiState.name.trim(),
@@ -168,10 +184,10 @@ class RegisterViewModel @Inject constructor(
 
             uiState=uiState.copy(
                 isLoading = false,
-                isRegisterSuccess = isSuccess,
+                isRegisterSuccess = outcome.isSuccess,
                 errorMessage =
-                    if(isSuccess) null
-                    else "회원가입에 실패했습니다."
+                    if(outcome.isSuccess) null
+                    else outcome.message ?: "회원가입에 실패했습니다."
             )
         }
     }
