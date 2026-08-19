@@ -9,6 +9,7 @@ import com.example.myapplication.dto.ContactInsertRequest
 import com.example.myapplication.dto.ContactResponse
 import com.example.myapplication.dto.IceCandidateDataDto
 import com.example.myapplication.dto.LandmarkFramePayload
+import com.example.myapplication.dto.SignSessionEndPayload
 import com.example.myapplication.dto.SdpDataDto
 import com.example.myapplication.dto.UpdateCallStatusRequest
 import com.example.myapplication.network.SessionManager
@@ -26,7 +27,6 @@ import com.example.myapplication.ui.call.video_call.toCallSignal
 import com.example.myapplication.ui.call.video_call.toCallStatusChange
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
@@ -90,9 +90,6 @@ class CallRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getContacts(): List<Contact> {
-        /*delay(MOCK_REQUEST_DELAY)
-        return contacts.toList()*/
-
         val response = callApiService.viewContactList()
 
         val body = response.body()
@@ -150,19 +147,10 @@ class CallRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getIncomingCall(callId: String): IncomingCall {
-        incomingCalls[callId]?.let { incomingCall ->
-            return incomingCall
-        }
-
-        delay(MOCK_REQUEST_DELAY)
-
-        return incomingCalls.getOrPut(callId) {
-            IncomingCall(
-                callId = callId,
-                callerName = "상대방",
-                callerProfileImageUrl = null
+        return incomingCalls[callId]
+            ?: throw IllegalStateException(
+                "수신 통화 정보가 없습니다. 전화를 다시 요청해 주세요."
             )
-        }
     }
 
     override suspend fun acceptCall(callId: String) {
@@ -191,23 +179,10 @@ class CallRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getVideoCallSession(callId: String): VideoCallSession {
-        delay(MOCK_REQUEST_DELAY)
-
-        return videoCallSessions.getOrPut(callId) {
-            VideoCallSession(
-                callId = callId,
-                remoteUserId = null,
-                remoteName = "상대방",
-                isOutgoing = true
+        return videoCallSessions[callId]
+            ?: throw IllegalStateException(
+                "영상 통화 정보가 없습니다. 전화를 다시 시도해 주세요."
             )
-        }
-    }
-
-    override suspend fun connectVideoCall(callId: String) {
-        check(videoCallSessions.containsKey(callId)) {
-            "존재하지 않는 통화입니다."
-        }
-        delay(MOCK_CONNECTION_DELAY)
     }
 
 
@@ -277,11 +252,6 @@ class CallRepositoryImpl @Inject constructor(
         } finally {
             callSocketDataSource.disconnect(callId)
         }
-    }
-
-    private companion object {
-        const val MOCK_REQUEST_DELAY = 300L
-        const val MOCK_CONNECTION_DELAY = 2_000L
     }
 
     override suspend fun updateCallStatus(callId: String, status: CallStatus) {
@@ -360,6 +330,26 @@ class CallRepositoryImpl @Inject constructor(
                 sequence = sequence,
                 timestampMs = timestampMs,
                 features = features
+            )
+        )
+    }
+
+    override suspend fun sendSignSessionEnd(
+        callId: String,
+        sessionId: String,
+        timestampMs: Long
+    ) {
+        val senderId = sessionManager.userId
+            ?: throw IllegalStateException(
+                "로그인 사용자 정보가 없습니다."
+            )
+
+        callSocketDataSource.sendSignSessionEnd(
+            SignSessionEndPayload(
+                callId = callId,
+                sessionId = sessionId,
+                senderId = senderId,
+                timestampMs = timestampMs
             )
         )
     }

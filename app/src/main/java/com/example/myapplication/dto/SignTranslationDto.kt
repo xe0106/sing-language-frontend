@@ -13,3 +13,15 @@ data class LandmarkFramePayload(
         const val TYPE_LANDMARK_FRAME = "landmark_frame"
     }
 }
+
+data class SignSessionEndPayload(
+    val type: String = TYPE_SESSION_END,
+    val callId: String,
+    val sessionId: String,
+    val senderId: Long,
+    val timestampMs: Long
+) {
+    companion object {
+        const val TYPE_SESSION_END = "session_end"
+    }
+}

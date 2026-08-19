@@ -19,8 +19,10 @@ import com.example.myapplication.ui.call.video_call.sign.SignUtterancePhase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -52,10 +54,14 @@ class VideoCallViewModel @Inject constructor(
 
     private var hasSentInitialOffer = false
 
+    private var connectionTimeoutJob: Job? = null
+
     private val signUtteranceController =
         SignUtteranceController()
 
     private var signSessionDiagnostics: SignSessionDiagnostics? = null
+
+    private val endedSignSessionIds = linkedSetOf<String>()
 
     private val iceServers =
         listOf(
@@ -106,9 +112,11 @@ class VideoCallViewModel @Inject constructor(
 
                     WebRtcEvent.Connected -> {
                         if (
-                            uiState.connectionState !=
-                            CallConnectionState.ENDED
+                            uiState.connectionState != CallConnectionState.ENDED &&
+                            uiState.connectionState != CallConnectionState.FAILED
                         ) {
+                            cancelConnectionTimeout()
+
                             uiState = uiState.copy(
                                 connectionState =
                                     CallConnectionState.CONNECTED,
@@ -124,20 +132,14 @@ class VideoCallViewModel @Inject constructor(
 
                     is WebRtcEvent.Failed -> {
                         if (
-                            uiState.connectionState !=
-                            CallConnectionState.ENDED
+                            uiState.connectionState != CallConnectionState.ENDED &&
+                            uiState.connectionState != CallConnectionState.FAILED
                         ) {
-                            uiState.callId?.let { callId ->
-                                callRepository.disconnectCallSocket(callId)
-                            }
-                            webRtcClient.close()
-
-                            uiState = uiState.copy(
-                                connectionState =
-                                    CallConnectionState.FAILED,
-                                errorMessage =
+                            failVideoConnection(
+                                IllegalStateException(
                                     event.reason
                                         ?: "영상 연결에 실패했습니다."
+                                )
                             )
                         }
                     }
@@ -166,20 +168,15 @@ class VideoCallViewModel @Inject constructor(
                 }
 
                 if (subtitle.isMine) {
-                    val activeSessionId =
-                        signUtteranceController.activeSessionId
-                    signUtteranceController.onOwnSubtitle(
-                        subtitle.sessionId
+                    val matchedEndedSession = subtitle.sessionId
+                        ?.let(endedSignSessionIds::remove)
+                        ?: false
+
+                    Log.d(
+                        LOG_TAG,
+                        "Sign subtitle MATCH sessionId=${subtitle.sessionId}, " +
+                            "matchedEndedSession=$matchedEndedSession"
                     )
-                    if (
-                        activeSessionId != null &&
-                        subtitle.sessionId == activeSessionId
-                    ) {
-                        finishSignDiagnostics(
-                            sessionId = activeSessionId,
-                            reason = "SUBTITLE"
-                        )
-                    }
                 }
             }
         }
@@ -224,10 +221,21 @@ class VideoCallViewModel @Inject constructor(
                     CallStatus.CONNECTED -> {
                         hasReceivedConnectedStatus = true
 
-                        uiState = uiState.copy(
-                            connectionState =
-                                CallConnectionState.CONNECTED,
-                            errorMessage = null
+                        // 서버 CONNECTED는 상대방이 수락했다는 뜻이다.
+                        // 실제 영상 연결 완료는 WebRtcEvent.Connected에서만 처리한다.
+                        if (
+                            uiState.connectionState ==
+                            CallConnectionState.CALLING
+                        ) {
+                            uiState = uiState.copy(
+                                connectionState =
+                                    CallConnectionState.CONNECTING,
+                                errorMessage = null
+                            )
+                        }
+
+                        startConnectionTimeout(
+                            statusChange.callId
                         )
 
                         sendInitialOffer(
@@ -265,16 +273,10 @@ class VideoCallViewModel @Inject constructor(
                     return@collect
                 }
 
-                webRtcClient.close()
-
-                loadedCallId = null
-                remoteUserId = null
-
-                uiState = uiState.copy(
-                    connectionState = CallConnectionState.FAILED,
-                    isLocalVideoReady = false,
-                    isRemoteVideoReady = false,
-                    errorMessage = "통화 서버와의 연결이 끊어졌습니다."
+                failVideoConnection(
+                    IllegalStateException(
+                        "통화 서버와의 연결이 끊어졌습니다."
+                    )
                 )
             }
         }
@@ -307,7 +309,9 @@ class VideoCallViewModel @Inject constructor(
             callId == null ||
             callRepository.callSocketConnectionState.value !=
             CallSocketConnectionState.CONNECTED ||
-            uiState.connectionState != CallConnectionState.CONNECTED
+            uiState.connectionState != CallConnectionState.CONNECTED ||
+            isEndingCall ||
+            isFinishingRemoteCall
         ) {
             signUtteranceController.reset()
             return
@@ -384,10 +388,63 @@ class VideoCallViewModel @Inject constructor(
                     "MAX_DURATION_5000_MS"
                 else -> "STATE_CHANGE"
             }
-            finishSignDiagnostics(
+            val sessionEndSent = publishSignSessionEnd(
+                callId = callId,
                 sessionId = previousSessionId,
+                timestampMs = featureFrame.timestampMs,
                 reason = reason
             )
+            if (sessionEndSent) {
+                finishSignDiagnostics(
+                    sessionId = previousSessionId,
+                    reason = reason
+                )
+            }
+        }
+    }
+
+    private suspend fun publishSignSessionEnd(
+        callId: String,
+        sessionId: String,
+        timestampMs: Long,
+        reason: String
+    ): Boolean {
+        val result = runCatching {
+            callRepository.sendSignSessionEnd(
+                callId = callId,
+                sessionId = sessionId,
+                timestampMs = timestampMs
+            )
+        }
+
+        result.onSuccess {
+            rememberEndedSignSession(sessionId)
+            Log.d(
+                LOG_TAG,
+                "Sign session_end SEND sessionId=$sessionId, " +
+                    "reason=$reason, timestampMs=$timestampMs"
+            )
+        }.onFailure { throwable ->
+            Log.w(
+                LOG_TAG,
+                "Failed to send sign session_end " +
+                    "sessionId=$sessionId, reason=$reason",
+                throwable
+            )
+        }
+
+        return result.isSuccess
+    }
+
+    private fun rememberEndedSignSession(sessionId: String) {
+        endedSignSessionIds += sessionId
+        while (
+            endedSignSessionIds.size >
+            MAX_TRACKED_ENDED_SIGN_SESSIONS
+        ) {
+            val oldest = endedSignSessionIds.firstOrNull()
+                ?: break
+            endedSignSessionIds.remove(oldest)
         }
     }
 
@@ -453,7 +510,22 @@ class VideoCallViewModel @Inject constructor(
         }
 
         isFinishingRemoteCall = true
-        signUtteranceController.reset()
+        val activeSignSessionId =
+            signUtteranceController.reset()
+        cancelConnectionTimeout()
+
+        if (
+            activeSignSessionId != null &&
+            callRepository.callSocketConnectionState.value ==
+            CallSocketConnectionState.CONNECTED
+        ) {
+            publishSignSessionEnd(
+                callId = callId,
+                sessionId = activeSignSessionId,
+                timestampMs = System.currentTimeMillis(),
+                reason = "CALL_END"
+            )
+        }
 
         callRepository.handleRemoteCallEnded(callId)
         webRtcClient.close()
@@ -543,11 +615,28 @@ class VideoCallViewModel @Inject constructor(
     private suspend fun failVideoConnection(
         exception: Throwable
     ) {
-        signUtteranceController.reset()
+        val activeSignSessionId =
+            signUtteranceController.reset()
+        cancelConnectionTimeout()
+
+        val callId = uiState.callId
+        if (
+            callId != null &&
+            activeSignSessionId != null &&
+            callRepository.callSocketConnectionState.value ==
+            CallSocketConnectionState.CONNECTED
+        ) {
+            publishSignSessionEnd(
+                callId = callId,
+                sessionId = activeSignSessionId,
+                timestampMs = System.currentTimeMillis(),
+                reason = "CONNECTION_FAILURE"
+            )
+        }
 
         runCatching {
             uiState.callId?.let { callId ->
-                callRepository.disconnectCallSocket(callId)
+                callRepository.endVideoCall(callId)
             }
         }
 
@@ -602,10 +691,49 @@ class VideoCallViewModel @Inject constructor(
         }
     }
 
+    private fun startConnectionTimeout(callId: String) {
+        cancelConnectionTimeout()
+
+        if (
+            uiState.callId != callId ||
+            uiState.connectionState == CallConnectionState.CONNECTED ||
+            uiState.connectionState == CallConnectionState.ENDED ||
+            uiState.connectionState == CallConnectionState.FAILED
+        ) {
+            return
+        }
+
+        connectionTimeoutJob = viewModelScope.launch {
+            delay(CONNECTION_TIMEOUT_MILLIS)
+            connectionTimeoutJob = null
+
+            if (
+                uiState.callId == callId &&
+                (
+                    uiState.connectionState == CallConnectionState.CALLING ||
+                    uiState.connectionState == CallConnectionState.CONNECTING
+                )
+            ) {
+                failVideoConnection(
+                    IllegalStateException(
+                        "영상 연결 시간이 초과되었습니다. 다시 시도해 주세요."
+                    )
+                )
+            }
+        }
+    }
+
+    private fun cancelConnectionTimeout() {
+        connectionTimeoutJob?.cancel()
+        connectionTimeoutJob = null
+    }
+
     fun loadCall(callId: String) {
         if(loadedCallId == callId) return
 
         signUtteranceController.reset()
+        endedSignSessionIds.clear()
+        cancelConnectionTimeout()
         loadedCallId = callId
 
         isOutgoingCall = null
@@ -648,39 +776,31 @@ class VideoCallViewModel @Inject constructor(
                     receiverId = session.remoteUserId
                 )
 
+                if (!session.isOutgoing) {
+                    startConnectionTimeout(session.callId)
+                }
+
                 sendInitialOffer(session.callId)
 
-                callRepository.connectVideoCall(callId)
-
                 session
-            }.onSuccess { session ->
+            }.onSuccess {
                 if (
                     uiState.connectionState ==
-                    CallConnectionState.ENDED
+                    CallConnectionState.ENDED ||
+                    uiState.connectionState ==
+                    CallConnectionState.FAILED
                 ) {
                     return@onSuccess
                 }
 
-                val isAlreadyConnected =
-                    uiState.connectionState ==
-                            CallConnectionState.CONNECTED
-
                 uiState=uiState.copy(
-                    connectionState =
-                        if(
-                            session.isOutgoing &&
-                            !isAlreadyConnected
-                        ) {
-                            CallConnectionState.CALLING
-                        } else {
-                            CallConnectionState.CONNECTED
-                        },
                     isLocalVideoReady =
                         webRtcClient.localVideoTrack.value != null,
                     isRemoteVideoReady =
                         webRtcClient.remoteVideoTrack.value != null
                 )
             }.onFailure { exception ->
+                cancelConnectionTimeout()
                 callRepository.disconnectCallSocket(callId)
                 webRtcClient.close()
 
@@ -777,9 +897,24 @@ class VideoCallViewModel @Inject constructor(
         }
 
         isEndingCall = true
-        signUtteranceController.reset()
+        val activeSignSessionId =
+            signUtteranceController.reset()
+        cancelConnectionTimeout()
 
         viewModelScope.launch{
+            if (
+                activeSignSessionId != null &&
+                callRepository.callSocketConnectionState.value ==
+                CallSocketConnectionState.CONNECTED
+            ) {
+                publishSignSessionEnd(
+                    callId = callId,
+                    sessionId = activeSignSessionId,
+                    timestampMs = System.currentTimeMillis(),
+                    reason = "CALL_END"
+                )
+            }
+
             val result =
                 runCatching {
                     callRepository.endVideoCall(callId)
@@ -817,11 +952,27 @@ class VideoCallViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
 
-        signUtteranceController.reset()
+        val activeSignSessionId =
+            signUtteranceController.reset()
+        cancelConnectionTimeout()
 
         val callId = uiState.callId
 
         cleanupScope.launch {
+            if (
+                callId != null &&
+                activeSignSessionId != null &&
+                callRepository.callSocketConnectionState.value ==
+                CallSocketConnectionState.CONNECTED
+            ) {
+                publishSignSessionEnd(
+                    callId = callId,
+                    sessionId = activeSignSessionId,
+                    timestampMs = System.currentTimeMillis(),
+                    reason = "VIEW_MODEL_CLEARED"
+                )
+            }
+
             runCatching {
                 if (callId != null) {
                     callRepository.disconnectCallSocket(callId)
@@ -838,6 +989,8 @@ class VideoCallViewModel @Inject constructor(
 
     private companion object {
         const val LOG_TAG = "VideoCallViewModel"
+        const val CONNECTION_TIMEOUT_MILLIS = 15_000L
+        const val MAX_TRACKED_ENDED_SIGN_SESSIONS = 32
     }
 
     private data class SignSessionDiagnostics(

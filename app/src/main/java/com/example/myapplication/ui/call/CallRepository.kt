@@ -24,7 +24,6 @@ interface CallRepository {
     suspend fun acceptCall(callId: String)
     suspend fun rejectCall(callId: String)
     suspend fun getVideoCallSession(callId: String): VideoCallSession
-    suspend fun connectVideoCall(callId: String)
     suspend fun getSubtitles(callId: String): List<CallMessage>
     suspend fun endVideoCall(callId: String)
     suspend fun updateCallStatus(
@@ -49,6 +48,12 @@ interface CallRepository {
         sequence: Long,
         timestampMs: Long,
         features: FloatArray
+    )
+
+    suspend fun sendSignSessionEnd(
+        callId: String,
+        sessionId: String,
+        timestampMs: Long
     )
 
     // 개인 수신 전화 알림 소켓

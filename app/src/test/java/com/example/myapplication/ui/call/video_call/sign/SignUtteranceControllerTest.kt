@@ -90,25 +90,14 @@ class SignUtteranceControllerTest {
     }
 
     @Test
-    fun `현재 sessionId의 본인 자막만 발화를 종료한다`() {
+    fun `reset은 폐기한 활성 sessionId를 반환한다`() {
         startUtterance()
 
-        controller.onOwnSubtitle("old-session")
-        assertEquals(SignUtterancePhase.ACTIVE, controller.phase)
+        val discardedSessionId = controller.reset()
 
-        controller.onOwnSubtitle(null)
-        assertEquals(SignUtterancePhase.ACTIVE, controller.phase)
-
-        controller.onOwnSubtitle(TEST_SESSION_ID)
-        assertEquals(
-            SignUtterancePhase.WAITING_NEUTRAL,
-            controller.phase
-        )
-        assertEquals(null, controller.activeSessionId)
-
-        controller.onFrame(frame(2_000L, hand = false))
-        controller.onFrame(frame(3_000L, hand = false))
+        assertEquals(TEST_SESSION_ID, discardedSessionId)
         assertEquals(SignUtterancePhase.NEUTRAL, controller.phase)
+        assertEquals(null, controller.activeSessionId)
     }
 
     @Test

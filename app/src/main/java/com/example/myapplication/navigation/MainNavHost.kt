@@ -26,6 +26,7 @@ import com.example.myapplication.ui.mypage.MyPageScreen
 import com.example.myapplication.ui.mypage.MyPageViewModel
 import com.example.myapplication.ui.mypage.ProfileEditScreen
 import com.example.myapplication.ui.quiz.QuizScreen
+import com.example.myapplication.ui.quiz.QuizViewModel
 import com.example.myapplication.ui.register.RegisterScreen1
 import com.example.myapplication.ui.register.RegisterScreen2
 import com.example.myapplication.ui.register.RegisterViewModel
@@ -225,13 +226,27 @@ fun MainNavHost(
                 )
             }
 
-            composable(Route.QUIZ.route) {
+            composable(Route.QUIZ.route) { backStackEntry ->
+                // 퀴즈 화면이 HOME 이동으로 백스택에서 제거되어도
+                // 진행 상태는 MAIN_GRAPH가 유지되는 동안 보존한다.
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry(
+                        Route.MAIN_GRAPH.route
+                    )
+                }
+                val quizViewModel: QuizViewModel =
+                    hiltViewModel(parentEntry)
+
                 QuizScreen(
+                    viewModel = quizViewModel,
                     onBackClick = { navController.popBackStack() },
                     onQuizFinished = {
                         navController.previousBackStackEntry
                             ?.savedStateHandle
                             ?.set(RESULT_QUIZ_COMPLETED, true)
+
+                        // 완료한 문제 세트는 다음 퀴즈 진입 때 반복하지 않는다.
+                        quizViewModel.restart()
                         navController.popBackStack()
                     }
                 )
