@@ -3,6 +3,7 @@ package com.example.myapplication.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,9 +23,7 @@ class HomeViewModel @Inject constructor(
         loadHome()
     }
 
-    /**
-     * 퀴즈 완료 후 진도율을 다시 불러올 때 MainNavHost 에서 호출한다.
-     */
+    /** 퀴즈 완료 후 진도율을 다시 불러올 때 MainNavHost 에서 호출한다. */
     fun refresh() {
         loadHome()
     }
@@ -33,15 +32,17 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            runCatching { homeRepository.getHome() }
-                .onSuccess { newState ->
-                    _uiState.value = newState.copy(isLoading = false, errorMessage = null)
-                }
-                .onFailure { e ->
-                    _uiState.update {
-                        it.copy(isLoading = false, errorMessage = e.message ?: "홈 정보를 불러오지 못했습니다.")
-                    }
-                }
+            // 홈 정보와 최근 연락처를 병렬로 조회한다
+            val homeDeferred = async { homeRepository.getHome() }
+            val contactsDeferred = async { homeRepository.getRecentContacts(limit = 3) }
+
+            val homeState = homeDeferred.await()
+            val contacts = contactsDeferred.await()
+
+            _uiState.value = homeState.copy(
+                recentContacts = contacts,
+                isLoading = false
+            )
         }
     }
 }

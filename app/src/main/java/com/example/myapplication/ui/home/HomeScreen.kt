@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
@@ -18,10 +19,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil3.compose.AsyncImage
 import com.example.myapplication.R
 import com.example.myapplication.ui.component.TopBar
 import com.example.myapplication.ui.theme.KuitTheme
@@ -43,7 +46,7 @@ fun HomeScreen(
             .padding(vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Spacer(modifier=Modifier.height(27.dp))
+        Spacer(modifier = Modifier.height(27.dp))
 
         TopBar(title = "홈")
 
@@ -137,8 +140,7 @@ fun HomeScreen(
             }
         }
 
-        // 최근 연락처
-        // TODO: GET /sign/language/home/recent?limit=2 응답 확인 후 서버 데이터로 교체
+        // 최근 연락처 (서버 데이터)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -155,42 +157,56 @@ fun HomeScreen(
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-            listOf("엄마", "동생", "영철이").forEach { name ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+            if (uiState.recentContacts.isEmpty()) {
+                Text(
+                    text = "최근 연락처가 없습니다",
+                    color = KuitTheme.colors.gray1,
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+                )
+            } else {
+                uiState.recentContacts.forEach { contact ->
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onCallClick() }
+                            .padding(horizontal = 20.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.basic_profile),
-                            contentDescription = name,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(20.dp))
-                        )
-                        Text(
-                            text = name,
-                            color = KuitTheme.colors.black,
-                            fontSize = 14.sp
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = contact.profileImageUrl,
+                                contentDescription = contact.contactName,
+                                contentScale = ContentScale.Crop,
+                                placeholder = painterResource(id = R.drawable.basic_profile),
+                                error = painterResource(id = R.drawable.basic_profile),
+                                fallback = painterResource(id = R.drawable.basic_profile),
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                            )
+                            Text(
+                                text = contact.contactName,
+                                color = KuitTheme.colors.black,
+                                fontSize = 14.sp
+                            )
+                        }
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_phone),
+                            contentDescription = "전화",
+                            tint = KuitTheme.colors.gray1,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_phone),
-                        contentDescription = "전화",
-                        tint = KuitTheme.colors.gray1,
-                        modifier = Modifier.size(20.dp)
+                    HorizontalDivider(
+                        color = Color(0xFFF9FAFB),
+                        thickness = 0.75.dp
                     )
                 }
-                HorizontalDivider(
-                    color = Color(0xFFF9FAFB),
-                    thickness = 0.75.dp
-                )
             }
         }
     }

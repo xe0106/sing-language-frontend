@@ -1,11 +1,14 @@
 package com.example.myapplication.ui.quiz
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -37,14 +40,21 @@ fun QuizScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    // 시스템 뒤로가기로 나갈 때도 진도율 갱신을 알린다
+    BackHandler {
+        if (uiState.isFinished) onQuizFinished() else onBackClick()
+    }
+
     QuizBackground {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())   // 내용이 길어지면 스크롤
+                .navigationBarsPadding()                 // 기기 하단 바와 겹침 방지
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier=Modifier.height(39.dp))
+            Spacer(modifier = Modifier.height(39.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -116,6 +126,9 @@ fun QuizScreen(
 
                 else -> QuizContent(uiState = uiState, viewModel = viewModel)
             }
+
+            // 스크롤 끝 여유 공간 (버튼이 화면 최하단에 붙지 않도록)
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
